@@ -1,16 +1,15 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from catboost import CatBoostClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, auc, roc_curve
+from safeaipackage.check_explainability import compute_rge_values
+from xgboost import XGBClassifier
 
 from main import data_lending_clean
-
-correlation_matrix = data_lending_clean.corr()
-print(correlation_matrix)
-print(correlation_matrix['response'])
 
 # Load and preprocess data
 x = data_lending_clean.iloc[:, :-1]  # Features
@@ -21,16 +20,16 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_
 
 # Standardize features
 scaler = StandardScaler()
-x_train = scaler.fit_transform(x_train)
-x_test = scaler.transform(x_test)
+x_train_scaled = pd.DataFrame(scaler.fit_transform(x_train), columns=x_train.columns, index=x_train.index)
+x_test_scaled = pd.DataFrame(scaler.transform(x_test), columns=x_test.columns, index=x_test.index)
 
 # Logistic Regression Model
-model = LogisticRegression()
-model.fit(x_train, y_train)
+model_log = LogisticRegression()
+model_log.fit(x_train_scaled, y_train)
 
 # Predictions
-y_pred = model.predict(x_test)
-y_prob = model.predict_proba(x_test)[:, 1]  # Probabilities for the positive class
+y_pred = model_log.predict(x_test_scaled)
+y_prob = model_log.predict_proba(x_test_scaled)[:, 1]  # Probabilities for the positive class
 
 # Evaluate Model Performance
 print("Accuracy:", accuracy_score(y_test, y_pred))
@@ -49,8 +48,10 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.title('Receiver Operating Characteristic Curve')
 plt.legend(loc='lower right')
 plt.show()
 
-
+variable_names = x_train.columns.tolist()
+explain = compute_rge_values(x_train, x_test, y_pred, model_log, variables = variable_names)
+print(explain)

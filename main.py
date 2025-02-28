@@ -39,3 +39,6 @@ print(data_lending_short.isna().sum().sum())  # Total number of NaNs in the enti
 
 data_lending_clean = data_lending_short.dropna(axis='index')
 print(data_lending_clean.shape)
+
+correlation_matrix = data_lending_clean.corr()
+print(correlation_matrix['response'])
