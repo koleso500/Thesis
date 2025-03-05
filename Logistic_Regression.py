@@ -7,7 +7,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, auc, roc_curve, f1_score
 from sklearn.decomposition import PCA
 from imblearn.under_sampling import TomekLinks
-from safeaipackage.check_explainability import compute_rge_values
+from core import rga
+from check_explainability import compute_rge_values
+from check_fairness import compute_rga_parity
+from check_robustness import compute_rgr_values
 
 from main import data_lending_clean
 
@@ -93,14 +96,15 @@ fig, ax = plt.subplots(figsize=(5, 5))
 plot_data(x_train_pca, y_train, ax, title='Original Dataset')
 plt.show()
 
-# Tomek Links undersampling
+# Tomek Links undersampling and PCA
 tl = TomekLinks()
-x_resampled, y_resampled = tl.fit_resample(x_train_pca, y_train)
+x_resampled, y_resampled = tl.fit_resample(x_train_scaled, y_train)
+x_resampled_pca = pca.transform(x_resampled)
 
 # Plot original dataset
 fig1, ax1 = plt.subplots(1, 2, figsize=(10, 5))
 plot_data(x_train_pca, y_train, ax1[0], title='Original Dataset')
-plot_data(x_resampled, y_resampled, ax1[1], title='After Tomek Links Undersampling')
+plot_data(x_resampled_pca, y_resampled, ax1[1], title='After Tomek Links Undersampling')
 plt.show()
 
 # Again Regression
@@ -108,7 +112,7 @@ model_log_tomek = LogisticRegression()
 model_log_tomek.fit(x_resampled, y_resampled)
 
 # New Probabilities
-y_prob_tomek = model_log_tomek.predict_proba(x_test_pca)[:, 1]  # Probabilities for the positive class
+y_prob_tomek = model_log_tomek.predict_proba(x_test_scaled)[:, 1]  # Probabilities for the positive class
 
 # ROC Curve
 fpr_tomek, tpr_tomek, thresholds_tomek = roc_curve(y_test, y_prob_tomek)
@@ -155,7 +159,15 @@ print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_tomek))
 print("Classification Report:\n", classification_report(y_test, y_pred_tomek))
 
 # Integrating safeai
-y_pred_list = y_pred.tolist()
-variable_names = x_train.columns.tolist()
-explain = compute_rge_values(x_train, x_test, y_pred_list, model_log, variables=variable_names)
-print(explain)
+# Accuracy
+RGA_class = rga(y_test, y_prob_tomek)
+print(f"RGA value is equal to {RGA_class}")
+
+# Explainability
+print(compute_rge_values(x_resampled, x_test_scaled, y_prob_tomek, model_log_tomek, ["loan_purpose"]))
+
+# Fairness
+print(compute_rga_parity(x_resampled, x_test_scaled, y_test, y_prob_tomek, model_log_tomek, "applicant_race_1"))
+
+# Robustness
+print(compute_rgr_values(x_test_scaled, y_prob_tomek, model_log_tomek, list(x_test_scaled.columns)))

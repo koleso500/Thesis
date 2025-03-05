@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 import pickle
+from safeaipackage import core, check_explainability, check_fairness, check_robustness
 
 from model import CreditModel
 
@@ -49,6 +50,7 @@ def evaluate_model():
     plt.title("Training Loss Over Epochs")
     plt.grid()
     plt.show()
+
 
 if __name__ == "__main__":
     evaluate_model()

@@ -25,7 +25,7 @@ data_lending_short = data_lending.drop(
              'applicant_race_name_4', 'co_applicant_race_name_2', 'co_applicant_race_name_3','loan_type_name',
              'loan_purpose_name', 'action_taken', 'msamd_name','county_name','applicant_ethnicity_name',
              'co_applicant_ethnicity_name','applicant_race_name_1', 'co_applicant_race_name_1', 'lien_status_name',
-             'purchaser_type_name'])
+             'purchaser_type_name', 'purchaser_type'])
 data_lending_short['applicant_sex_name'] = data_lending_short['applicant_sex_name'].map({'Male': 1, 'Female': 0})
 data_lending_short['co_applicant_sex_name'] = data_lending_short['co_applicant_sex_name'].map({'Female': 0, 'Male': 1, 'No co-applicant': 2,
        'Information not provided by applicant in mail, Internet, or telephone application': 3,
