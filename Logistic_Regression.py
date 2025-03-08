@@ -160,8 +160,8 @@ print("Classification Report:\n", classification_report(y_test, y_pred_tomek))
 
 # Integrating safeai
 # Accuracy
-RGA_class = rga(y_test, y_prob_tomek)
-print(f"RGA value is equal to {RGA_class}")
+rga_class = rga(y_test, y_prob_tomek)
+print(f"RGA value is equal to {rga_class}")
 
 # Explainability
 print(compute_rge_values(x_resampled, x_test_scaled, y_prob_tomek, model_log_tomek, ["loan_purpose"]))

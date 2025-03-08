@@ -2,15 +2,21 @@ import torch
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 import pickle
-from safeaipackage import core, check_explainability, check_fairness, check_robustness
-
 from model import CreditModel
+from core import rga
+from check_explainability import compute_rge_values
+from check_fairness import compute_rga_parity
+from check_robustness import compute_rgr_values
 
 with open("saved_data.pkl", "rb") as f:
     saved_data = pickle.load(f)
 x_train = saved_data["x_train"]
+x_train_scaled_names = saved_data["x_train_scaled_names"]
+x_test_scaled_names = saved_data["x_test_scaled_names"]
 x_test_tensor = saved_data["x_test_tensor"]
 y_test_tensor = saved_data["y_test_tensor"]
+y_train = saved_data["y_train"]
+y_test = saved_data["y_test"]
 best_params = saved_data["best_params"]
 loss_values = saved_data["loss_values"]
 
@@ -27,6 +33,7 @@ def evaluate_model():
 
     # Convert ground truth labels to NumPy for evaluation
     y_test_numpy = y_test_tensor.cpu().numpy()
+    y_pred_prob = y_pred.cpu().numpy()
 
     # Compute confusion matrix
     conf_matrix = confusion_matrix(y_test_numpy, y_pred_labels)
@@ -51,6 +58,19 @@ def evaluate_model():
     plt.grid()
     plt.show()
 
+    # Integrating safeai
+    # Accuracy
+    rga_class = rga(y_test, y_pred_prob)
+    print(f"RGA value is equal to {rga_class}")
+
+    # Explainability
+    print(compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, ["loan_purpose"]))
+
+    # Fairness
+    print(compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model, "applicant_race_1"))
+
+    # Robustness
+    print(compute_rgr_values(x_test_scaled_names, y_pred_prob, best_model, list(x_test_scaled_names.columns)))
 
 if __name__ == "__main__":
     evaluate_model()

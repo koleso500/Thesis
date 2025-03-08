@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 from typing import Union
-from .core import rga
-from .util.utils import validate_variables, convert_to_dataframe, check_nan, find_yhat
+from core import rga
+from util.utils import validate_variables, convert_to_dataframe, check_nan, find_yhat
 from catboost import CatBoostClassifier, CatBoostRegressor
-from sklearn.base import is_classifier, is_regressor
 from sklearn.base import BaseEstimator
 from xgboost import XGBClassifier, XGBRegressor
+import torch
 
 
 def perturb(data: pd.DataFrame, 
@@ -56,7 +56,8 @@ def perturb(data: pd.DataFrame,
 
 def compute_rgr_values(xtest: pd.DataFrame, 
                                 yhat: list, 
-                                model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator], 
+                                model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,
+                                torch.nn.Module],
                                 variables: list, 
                                 perturbation_percentage= 0.05):
     """
@@ -68,7 +69,7 @@ def compute_rgr_values(xtest: pd.DataFrame,
             A dataframe including test data.
     yhat : list
             A list of predicted values.
-    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator]
+    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
             A trained model, which could be a classifier or regressor. 
     variables: list 
             A list of variables.

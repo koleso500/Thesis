@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from .util.utils import check_nan,convert_to_dataframe
+from util.utils import check_nan,convert_to_dataframe
 
 def rga(y: list, yhat: list):
         """

@@ -1,15 +1,16 @@
 import pandas as pd
-import numpy as np
 from typing import Union
 from catboost import CatBoostClassifier, CatBoostRegressor
 from sklearn.base import BaseEstimator
 from xgboost import XGBClassifier, XGBRegressor
 from sklearn.base import is_classifier, is_regressor
+import torch
 
 
 def manipulate_testdata(xtrain: pd.DataFrame, 
                         xtest: pd.DataFrame, 
-                        model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator], 
+                        model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,
+                               torch.nn.Module],
                         variable: str):
     """
     Manipulate the given variable column in test data based on values of that variable in train data.
@@ -20,7 +21,7 @@ def manipulate_testdata(xtrain: pd.DataFrame,
             A dataframe including train data.
     xtest : pd.DataFrame
             A dataframe including test data.
-    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator]
+    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
             A trained model, which could be a classifier or regressor.
     variable: str 
             Name of variable.
@@ -42,7 +43,6 @@ def manipulate_testdata(xtrain: pd.DataFrame,
         else:
             mode_value = xtrain[variable].mode()[0]
             xtest_rm[variable] = mode_value
-        return xtest_rm
         
     elif isinstance(model, (BaseEstimator, XGBClassifier, XGBRegressor)):
         # specific settings for sklearn and xgboost models
@@ -52,9 +52,18 @@ def manipulate_testdata(xtrain: pd.DataFrame,
         else:
             mean_value = xtrain[variable].mean()
             xtest_rm[variable] = mean_value
-        return xtest_rm
+
+    elif isinstance(model, torch.nn.Module):
+        # specific settings for torch models
+        if isinstance(xtrain[variable].dtype, pd.CategoricalDtype):
+            mode_value = xtrain[variable].mode()[0]
+            xtest_rm[variable] = mode_value
+        else:
+            mean_value = xtrain[variable].mean()
+            xtest_rm[variable] = mean_value
     else:
         raise ValueError("Unsupported model type")
+    return xtest_rm
 
 
 def convert_to_dataframe(*args):
@@ -66,7 +75,8 @@ def convert_to_dataframe(*args):
     Args:  *args
             A variable number of input objects that can be converted into Pandas DataFrames (e.g., lists, dictionaries, numpy arrays).
 
-    Returns:  
+    Returns
+    -------
     list of pd.DataFrame
             A list of Pandas DataFrames created from the input objects.    
     """
@@ -118,7 +128,8 @@ def check_nan(*dataframes):
             raise ValueError(f"DataFrame {i} contains missing values.")
 
 
-def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator],      
+def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,
+              torch.nn.Module],
               xtest: pd.DataFrame):
     """
     Find predicted values for the manipulated data.
@@ -127,10 +138,11 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
     ----------
     xtest : pd.DataFrame
             A dataframe including test data.
-    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator]
+    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
             A trained model, which could be a classifier or regressor.
 
-    Returns:  
+    Returns
+    -------
     float
             The yhat value.
     """
@@ -138,4 +150,13 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
         yhat = [x[1] for x in model.predict_proba(xtest)]
     elif is_regressor(model):
         yhat = model.predict(xtest)
+    elif isinstance(model, torch.nn.Module):
+        xtest_tensor = torch.tensor(xtest.values, dtype=torch.float32)
+        model.eval()
+        with torch.no_grad():
+            yhat = model(xtest_tensor)
+        if yhat.shape[1] == 2:  # binary classification
+            yhat = yhat[:, 1].numpy()
+        else:
+            yhat = yhat.numpy()
     return yhat

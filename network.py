@@ -3,6 +3,7 @@ from torch import nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import OneCycleLR
 import numpy as np
+import pandas as pd
 import os
 import itertools
 from sklearn.model_selection import train_test_split, KFold
@@ -34,6 +35,8 @@ torch.backends.cudnn.benchmark = True
 initial_scaler = StandardScaler()
 x_train_scaled = initial_scaler.fit_transform(x_train)
 x_test_scaled = initial_scaler.transform(x_test) #important not to fit again(mean and standard deviation)
+x_train_scaled_names = pd.DataFrame(initial_scaler.fit_transform(x_train), columns=x_train.columns, index=x_train.index)
+x_test_scaled_names = pd.DataFrame(initial_scaler.transform(x_test), columns=x_test.columns, index=x_test.index)
 
 # Convert to PyTorch tensors
 x_train_tensor = torch.tensor(x_train_scaled, dtype=torch.float32)
@@ -65,7 +68,7 @@ class CreditModel(nn.Module): #always inherits nn.Module
 # Hyperparameter tuning
 batch_sizes = [128] #64,128,256
 max_lr = 0.01
-hidden_layer_sizes = [(32, 16), (64, 32, 16), (128, 64, 32)]
+hidden_layer_sizes = [(64, 32, 16), (128, 64, 32)] #(32,16)
 dropout_rates = [0.2] #0.3
 
 k_folds = 3 #5
@@ -166,9 +169,10 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
     if avg_fold_accuracy > best_accuracy:
         best_accuracy = avg_fold_accuracy
         best_params = (batch_size, max_lr, layers, dropout_rate)
+        best_model_probabilities = y_val_pred.cpu().numpy()
 
         # Save the best model
-        best_model_path = os.path.join(model_dir, "best_credit_model.pth") #################
+        best_model_path = os.path.join(model_dir, "best_credit_model.pth")
         torch.save(model.state_dict(), best_model_path)
         print(f"New best model saved at {best_model_path}")
 
@@ -179,8 +183,12 @@ print(f"Best model saved at {best_model_path}")
 with open("saved_data.pkl", "wb") as f:
     pickle.dump({
         "x_train": x_train,
+        "x_train_scaled_names": x_train_scaled_names,
+        "x_test_scaled_names": x_test_scaled_names,
         "x_test_tensor": x_test_tensor,
+        "y_train": y_train,
+        "y_test": y_test,
         "y_test_tensor": y_test_tensor,
         "best_params": best_params,
-        "loss_values": loss_values
+        "loss_values": loss_values,
     }, f)
