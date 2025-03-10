@@ -91,7 +91,6 @@ def plot_data(x, y, ax, title = None):
     if title:
         ax.set_title(title)
 
-# Plot dataset
 fig, ax = plt.subplots(figsize=(5, 5))
 plot_data(x_train_pca, y_train, ax, title='Original Dataset')
 plt.show()
@@ -101,7 +100,7 @@ tl = TomekLinks()
 x_resampled, y_resampled = tl.fit_resample(x_train_scaled, y_train)
 x_resampled_pca = pca.transform(x_resampled)
 
-# Plot original dataset
+# Plot original dataset and after resampling
 fig1, ax1 = plt.subplots(1, 2, figsize=(10, 5))
 plot_data(x_train_pca, y_train, ax1[0], title='Original Dataset')
 plot_data(x_resampled_pca, y_resampled, ax1[1], title='After Tomek Links Undersampling')

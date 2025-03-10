@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score
 import pickle
 
 from main import data_lending_clean
+from model import CreditModel
 
 # Load and preprocess data
 x = data_lending_clean.iloc[:, :-1]  # Features
@@ -43,27 +44,6 @@ x_train_tensor = torch.tensor(x_train_scaled, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).view(-1, 1) #1D (n) -> 2D (n,1)
 x_test_tensor = torch.tensor(x_test_scaled, dtype=torch.float32)
 y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1)
-
-
-# Define Neural Network Model
-class CreditModel(nn.Module): #always inherits nn.Module
-    def __init__(self, input_size, hidden_layers, dropout_rate): #architecture
-        super(CreditModel, self).__init__()
-        self.layers = nn.ModuleList()
-        prev_size = input_size
-
-        for size in hidden_layers: #append = adding layers
-            self.layers.append(nn.Linear(prev_size, size))
-            self.layers.append(nn.ReLU())
-            self.layers.append(nn.Dropout(dropout_rate))
-            prev_size = size
-
-        self.layers.append(nn.Linear(prev_size, 1))
-
-    def forward(self, x): #how data flows
-        for layer in self.layers:
-            x = layer(x)
-        return x
 
 # Hyperparameter tuning
 batch_sizes = [128] #64,128,256
