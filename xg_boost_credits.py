@@ -1,15 +1,14 @@
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier as RF
-from sklearn.metrics import f1_score, accuracy_score, classification_report, confusion_matrix, auc, roc_curve
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
+import xgboost as xgb
+import shap
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score, accuracy_score, classification_report, confusion_matrix, auc, roc_curve
 from core import rga
 from check_explainability import compute_rge_values
 from check_fairness import compute_rga_parity
 from check_robustness import compute_rgr_values
-import json
 
 from main import data_lending_clean
 
@@ -21,33 +20,19 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_
 print("Training set shape:", x_train.shape)
 print("Testing set shape:", x_test.shape)
 
-# Grid search
-param_grid = {
-    'n_estimators': [100, 200, 300, 500],
-    'max_depth': [None, 5, 10, 15],
-    'max_features': [5, int(x_train.shape[1] / 2), 'sqrt', 'log2', x_train.shape[1]],
-    'min_samples_leaf': [1, 2, 4, 8]
-}
-grid_search = GridSearchCV(RF(random_state=5), param_grid, scoring='f1', cv=3, n_jobs=-1, verbose=3)
-grid_search.fit(x_train, y_train)
+# Initialize and train the XGBoost classifier
+xgb_model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', random_state=42)
+xgb_model.fit(x_train, y_train)
 
-best_params = grid_search.best_params_
-print(f"Best max_features: {best_params}")
-print(f"Best F1 Score from CV: {grid_search.best_score_:.4f}")
+# Make predictions
+y_pred = xgb_model.predict(x_test)
+y_prob = xgb_model.predict_proba(x_test)[:, 1]
 
-# Save best parameters
-json_str = json.dumps(best_params, indent=4)
-with open("best_rf_params.json", "w", encoding="utf-8") as file:
-    file.write(json_str)
-print("Best parameters saved successfully!")
-
-#Random Forest
-random_forest = RF(**best_params, random_state=15)
-random_forest.fit(x_train, y_train)
-y_pred = random_forest.predict(x_test)
-y_prob = random_forest.predict_proba(x_test)[:, 1]  # Probabilities for the positive class
+# Evaluate model performance
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+print("Classification Report:\n", classification_report(y_test, y_pred))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred))
 
 #AUC
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
@@ -71,6 +56,15 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic Curve')
 plt.legend(loc='lower right')
 plt.show()
+
+# Feature importance plot
+xgb.plot_importance(xgb_model)
+plt.show()
+
+# Initialize SHAP explainer
+explainer = shap.Explainer(xgb_model)
+shap_values = explainer(x_test)
+shap.summary_plot(shap_values, x_test)
 
 # DataFrame with thresholds, FPR, TPR, and F1 Score
 roc_data = pd.DataFrame({
@@ -99,10 +93,10 @@ rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-print(compute_rge_values(x_train, x_test, y_prob, random_forest, ["loan_purpose"]))
+print(compute_rge_values(x_train, x_test, y_prob, xgb_model, ["loan_purpose"]))
 
 # Fairness
-print(compute_rga_parity(x_train, x_test, y_test, y_prob, random_forest, "applicant_race_1"))
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, xgb_model, "applicant_race_1"))
 
 # Robustness
-print(compute_rgr_values(x_test, y_prob, random_forest, list(x_test.columns)))
+print(compute_rgr_values(x_test, y_prob, xgb_model, list(x_test.columns)))
