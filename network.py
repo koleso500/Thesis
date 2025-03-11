@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 import pickle
+import json
 
 from main import data_lending_clean
 from model import CreditModel
@@ -172,3 +173,18 @@ with open("saved_data.pkl", "wb") as f:
         "best_params": best_params,
         "loss_values": loss_values,
     }, f)
+
+# Save necessary variables
+with open("saved_data_torch.json", "w") as f:
+    json.dump({
+        "x_train": x_train,
+        "x_train_scaled_names": x_train_scaled_names,
+        "x_test_scaled_names": x_test_scaled_names,
+        "x_test_tensor": x_test_tensor,
+        "y_train": y_train,
+        "y_test": y_test,
+        "y_test_tensor": y_test_tensor,
+        "best_params": best_params,
+        "loss_values": loss_values,
+    }, f, default=lambda obj: obj.tolist() if hasattr(obj, "tolist") else str(obj), indent=4)
+print("Best parameters saved successfully!")
