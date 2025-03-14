@@ -1,39 +1,47 @@
+import json
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier as RF
-from sklearn.metrics import f1_score, accuracy_score, classification_report, confusion_matrix, auc, roc_curve
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
-import matplotlib.pyplot as plt
+import shap
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
+from sklearn.model_selection import GridSearchCV, train_test_split
+
 from core import rga
 from check_explainability import compute_rge_values
 from check_fairness import compute_rga_parity
 from check_robustness import compute_rgr_values
-import json
-
 from main import data_lending_clean
 
+# Data separation
 x = data_lending_clean.iloc[:, :-1]  # Features
 y = data_lending_clean.iloc[:, -1]  # Target (0 = approved, 1 = rejected)
 
-# Splitting into 80% training and 20% testing
+# Split into 80% training and 20% testing
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
 print("Training set shape:", x_train.shape)
 print("Testing set shape:", x_test.shape)
 
-# Grid search
-param_grid = {
-    'n_estimators': [100], #200,300,500
-    'max_depth': [None, 5], #10,15
-    'max_features': [5, int(x_train.shape[1] / 2)], #'sqrt', 'log2', x_train.shape[1]
-    'min_samples_leaf': [1] #2,4,8
+# Random Forest model
+rf_model = RandomForestClassifier(random_state=42)
+
+# Hyperparameters grid
+params_grid = {
+    'n_estimators': [100, 200, 300, 500], 
+    'max_depth': [None, 5, 10, 15],
+    'max_features': [5, int(x_train.shape[1] / 2), 'sqrt', 'log2', x_train.shape[1]],
+    'min_samples_leaf': [1, 2, 4, 8]
 }
-grid_search = GridSearchCV(RF(random_state=5), param_grid, scoring='roc_auc', cv=3, n_jobs=-1, verbose=3)
+
+# Grid search
+grid_search = GridSearchCV(rf_model, params_grid, cv=3, scoring='roc_auc', n_jobs=-1, verbose=3)
 grid_search.fit(x_train, y_train)
 
+# Best model, best parameters and AUC
+best_model = grid_search.best_estimator_
 best_params = grid_search.best_params_
-print(f"Best max_features: {best_params}")
-print(f"Best F1 Score from CV: {grid_search.best_score_:.4f}")
+print("Best Parameters:", best_params)
+print("Best AUC:", grid_search.best_score_)
 
 # Save best parameters
 json_str = json.dumps(best_params, indent=4)
@@ -41,15 +49,11 @@ with open("best_rf_params.json", "w", encoding="utf-8") as file:
     file.write(json_str)
 print("Best parameters saved successfully!")
 
-#Random Forest
-random_forest = RF(**best_params, random_state=15)
-random_forest.fit(x_train, y_train)
-y_pred = random_forest.predict(x_test)
-y_prob = random_forest.predict_proba(x_test)[:, 1]  # Probabilities for the positive class
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred))
+# Make predictions
+y_pred = best_model.predict(x_test)
+y_prob = best_model.predict_proba(x_test)[:, 1]
 
-#AUC
+# AUC (for future use)
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
 print(roc_auc)
@@ -83,7 +87,7 @@ roc_data = pd.DataFrame({
 # Best F1 score and corresponding threshold
 best_f1 = roc_data.loc[roc_data['f1_score'].idxmax()]
 best_threshold = best_f1["threshold"]
-print(f'Best F1 Score: {best_f1["f1_score"]:.4f} at Threshold: {best_threshold:.4f}')
+print(f"Best F1 Score: {best_f1["f1_score"]:.4f} at Threshold: {best_threshold:.4f}")
 
 # Predictions at best threshold
 y_pred_best = np.where(y_prob >= best_threshold, 1, 0)
@@ -93,16 +97,21 @@ print("Accuracy:", accuracy_score(y_test, y_pred_best))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_best))
 print("Classification Report:\n", classification_report(y_test, y_pred_best))
 
+# SHAP plot
+explainer = shap.Explainer(best_model)
+shap_values = explainer(x_test)
+shap.summary_plot(shap_values, x_test)
+
 # Integrating safeai
 # Accuracy
 rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-print(compute_rge_values(x_train, x_test, y_prob, random_forest, ["loan_purpose"]))
+print(compute_rge_values(x_train, x_test, y_prob, best_model, ["loan_purpose"]))
 
 # Fairness
-print(compute_rga_parity(x_train, x_test, y_test, y_prob, random_forest, "applicant_race_1"))
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness
-print(compute_rgr_values(x_test, y_prob, random_forest, list(x_test.columns)))
+print(compute_rgr_values(x_test, y_prob, best_model, list(x_test.columns)))
