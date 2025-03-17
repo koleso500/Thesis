@@ -1,12 +1,13 @@
-import pandas as pd
-import numpy as np
-from typing import Union
-from core import rga
-from util.utils import validate_variables, convert_to_dataframe, check_nan, find_yhat
 from catboost import CatBoostClassifier, CatBoostRegressor
+import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator
-from xgboost import XGBClassifier, XGBRegressor
 import torch
+from typing import Union
+from util.utils import check_nan, convert_to_dataframe, find_yhat, validate_variables
+from xgboost import XGBClassifier, XGBRegressor
+
+from core import rga
 
 
 def perturb(data: pd.DataFrame, 
@@ -38,6 +39,7 @@ def perturb(data: pd.DataFrame,
     vals = [[i, values] for i, values in enumerate(perturbed_variable)]
     indices = [x[0] for x in sorted(vals, key= lambda item: item[1])]
     sorted_variable = [x[1] for x in sorted(vals, key= lambda item: item[1])]
+
     percentile_5_index = int(np.ceil(perturbation_percentage * len(sorted_variable)))
     percentile_95_index = int(np.ceil((1-perturbation_percentage) * len(sorted_variable)))
     values_before_5th_percentile = sorted_variable[:percentile_5_index]
@@ -47,6 +49,7 @@ def perturb(data: pd.DataFrame,
     uppertail_indices = (indices[-n:])
     uppertail_indices = uppertail_indices[::-1]
     new_variable = perturbed_variable.copy()
+
     for j in range(n):
         new_variable[lowertail_indices[j]] = perturbed_variable[uppertail_indices[j]]
         new_variable[uppertail_indices[j]] = perturbed_variable[lowertail_indices[j]]

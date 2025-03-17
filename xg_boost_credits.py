@@ -1,17 +1,18 @@
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import shap
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
 from sklearn.model_selection import GridSearchCV, train_test_split
 import xgboost as xgb
 
-from core import rga
 from check_explainability import compute_rge_values
 from check_fairness import compute_rga_parity
 from check_robustness import compute_rgr_values
-from main import data_lending_clean
+from core import rga
+from data_processing_credits import data_lending_clean
 
 # Data separation
 x = data_lending_clean.iloc[:, :-1]  # Features
@@ -47,7 +48,8 @@ print("Best AUC:", grid_search.best_score_)
 
 # Save best parameters
 json_str = json.dumps(best_params, indent=4)
-with open("best_xgb_params.json", "w", encoding="utf-8") as file:
+file_path = os.path.join("saved_data", "best_xgb_params.json")
+with open(file_path, "w", encoding="utf-8") as file:
     file.write(json_str)
 print("Best parameters saved successfully!")
 

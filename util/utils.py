@@ -1,10 +1,9 @@
-import pandas as pd
-from typing import Union
 from catboost import CatBoostClassifier, CatBoostRegressor
-from sklearn.base import BaseEstimator
-from xgboost import XGBClassifier, XGBRegressor
-from sklearn.base import is_classifier, is_regressor
+import pandas as pd
+from sklearn.base import BaseEstimator, is_classifier, is_regressor
 import torch
+from typing import Union
+from xgboost import XGBClassifier, XGBRegressor
 
 
 def manipulate_testdata(xtrain: pd.DataFrame, 
@@ -72,7 +71,7 @@ def convert_to_dataframe(*args):
 
     Parameters
     ----------
-    Args:  *args
+    *args
             A variable number of input objects that can be converted into Pandas DataFrames (e.g., lists, dictionaries, numpy arrays).
 
     Returns
@@ -89,8 +88,8 @@ def validate_variables(variables: list, xtrain: pd.DataFrame):
 
     Parameters
     ----------
-    variables: list 
-            List of variables.
+    variables: list
+            Variables.
     xtrain : pd.DataFrame
             A dataframe including train data.
 
@@ -124,8 +123,12 @@ def check_nan(*dataframes):
     """
 
     for i, df in enumerate(dataframes, start=1):
-        if df.isna().sum().sum() > 0:
-            raise ValueError(f"DataFrame {i} contains missing values.")
+        if isinstance(df, pd.DataFrame):  # Ensure df is a DataFrame
+            if df.isna().sum().sum() > 0:  # Check if there are any missing values
+                raise ValueError(f"DataFrame {i} contains missing values")
+        else:
+            raise TypeError(f"Item {i} is not a pandas DataFrame")
+
 
 
 def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,
@@ -143,7 +146,6 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
 
     Returns
     -------
-    float
             The yhat value.
     """
     if is_classifier(model):
@@ -159,4 +161,7 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
             yhat = yhat[:, 1].numpy()
         else:
             yhat = yhat.numpy()
+    else:
+        raise ValueError("The model type is not recognized for prediction")
+
     return yhat

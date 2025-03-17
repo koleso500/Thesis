@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from util.utils import check_nan,convert_to_dataframe
 
 def rga(y: list, yhat: list):
@@ -48,16 +48,16 @@ def rga(y: list, yhat: list):
         # Get ystar in the same order as rord in the sorted dataframe
         ystar = df['rord'].values
 
-        # Create the index array I
-        I = np.arange(len(df))
+        # Create the index array i
+        i = np.arange(len(df))
 
         # Calculate conc, dec (descending order of y) and inc (ascending order of y)
-        conc = np.sum(I * ystar)
+        conc = np.sum(i * ystar)
         sorted_y = np.sort(df['y'])  # y sorted in ascending order
-        dec = np.sum(I * sorted_y[::-1])  # y sorted in descending order
-        inc = np.sum(I * sorted_y)
+        dec = np.sum(i * sorted_y[::-1])  # y sorted in descending order
+        inc = np.sum(i * sorted_y)
 
         # Compute the RGA
-        RGA = (conc - dec) / (inc - dec)
+        result = (conc - dec) / (inc - dec)
 
-        return RGA
+        return result
