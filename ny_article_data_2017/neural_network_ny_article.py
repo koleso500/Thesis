@@ -11,12 +11,12 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from data_processing_credits import data_lending_clean
-from torch_model import CreditModel
+from ny_article_data_2017.data_processing_credits_ny_article import data_lending_ny_clean
+from torch_for_credits.torch_model import CreditModel
 
 # Data separation
-x = data_lending_clean.iloc[:, :-1]  # Features
-y = data_lending_clean.iloc[:, -1]  # Target (0 = approved, 1 = rejected)
+x = data_lending_ny_clean.drop(columns=['response'])
+y = data_lending_ny_clean['response']
 
 # Splitting into 80% training and 20% testing
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
@@ -59,7 +59,7 @@ best_params = None
 best_model_path = None
 loss_values = []
 model = None
-model_dir = "saved_models"
+model_dir = "../saved_models"
 os.makedirs(model_dir, exist_ok=True) # Create directory if it doesn't exist
 
 # Automatic mixed precision
@@ -154,7 +154,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         best_model_probabilities = y_val_pred.cpu().numpy()
 
         # Save the best model
-        best_torch_model_path = os.path.join(model_dir, "best_credit_model.pth")
+        best_torch_model_path = os.path.join(model_dir, "best_credit_model_ny_article.pth")
         if model is not None:
             torch.save(model.state_dict(), best_torch_model_path)
             print(f"New best model saved at {best_model_path}")
@@ -166,7 +166,7 @@ print(f"Best model saved at {best_model_path}")
 
 # Save variables to the folder
 # Tensors
-tensor_path = os.path.join("saved_data", "full_data_tensors.pth")
+tensor_path = os.path.join("../saved_data", "full_data_tensors_ny_article.pth")
 torch.save({
     "x_train_tensor": x_train_tensor,
     "y_train_tensor": y_train_tensor,
@@ -176,14 +176,14 @@ torch.save({
 
 # Best parameters
 json_str = json.dumps(best_params, indent=4)
-file_path = os.path.join("saved_data", "best_torch_params.json")
+file_path = os.path.join("../saved_data", "best_torch_params_ny_article.json")
 with open(file_path, "w", encoding="utf-8") as file:
     file.write(json_str)
 print("Best parameters saved successfully!")
 
 # Other
-x_train_scaled_names.to_csv(os.path.join("saved_data", "x_train_scaled_names.csv"), index=False)
-x_test_scaled_names.to_csv(os.path.join("saved_data", "x_test_scaled_names.csv"), index=False)
-np.save(os.path.join("saved_data", "y_train.npy"), y_train)
-np.save(os.path.join("saved_data", "y_test.npy"), y_test)
-np.save(os.path.join("saved_data", "loss_values.npy"), np.array(loss_values))
+x_train_scaled_names.to_csv(os.path.join("../saved_data", "x_train_scaled_names_ny_article.csv"), index=False)
+x_test_scaled_names.to_csv(os.path.join("../saved_data", "x_test_scaled_names_ny_article.csv"), index=False)
+np.save(os.path.join("../saved_data", "y_train_ny_article.npy"), y_train)
+np.save(os.path.join("../saved_data", "y_test_ny_article.npy"), y_test)
+np.save(os.path.join("../saved_data", "loss_values_ny_article.npy"), np.array(loss_values))

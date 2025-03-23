@@ -8,15 +8,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from check_explainability import compute_rge_values
-from check_fairness import compute_rga_parity
-from check_robustness import compute_rgr_values
-from core import rga
-from data_processing_credits import data_lending_clean
+from safeai_files.check_explainability import compute_rge_values
+from safeai_files.check_fairness import compute_rga_parity
+from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.core import rga
+from ny_original_data_2017.data_processing_credits_ny_original import data_lending_ny_clean
 
 # Data separation
-x = data_lending_clean.iloc[:, :-1]  # Features
-y = data_lending_clean.iloc[:, -1]  # Target (0 = approved, 1 = rejected)
+x = data_lending_ny_clean.drop(columns=['action_taken'])
+y = data_lending_ny_clean['action_taken']
 
 # Split into 80% training and 20% testing
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
@@ -28,10 +28,10 @@ rf_model = RandomForestClassifier(random_state=42)
 
 # Hyperparameters grid
 params_grid = {
-    'n_estimators': [100, 200, 300, 500], 
-    'max_depth': [None, 5, 10, 15],
-    'max_features': [5, int(x_train.shape[1] / 2), 'sqrt', 'log2', x_train.shape[1]],
-    'min_samples_leaf': [1, 2, 4, 8]
+    'n_estimators': [500], #100,200,300
+    'max_depth': [10], #None, 5, 15
+    'max_features': ['sqrt'], #'log2', x_train.shape[1], 5, int(x_train.shape[1] / 2),
+    'min_samples_leaf': [8] #1,2,4
 }
 
 # Grid search
@@ -46,7 +46,7 @@ print("Best AUC:", grid_search.best_score_)
 
 # Save best parameters
 json_str = json.dumps(best_params, indent=4)
-file_path = os.path.join("saved_data", "best_rf_params.json")
+file_path = os.path.join("../saved_data", "best_rf_params_ny_original.json")
 with open(file_path, "w", encoding="utf-8") as file:
     file.write(json_str)
 print("Best parameters saved successfully!")
@@ -113,6 +113,7 @@ print(f"RGA value is equal to {rga_class}")
 print(compute_rge_values(x_train, x_test, y_prob, best_model, ["loan_purpose"]))
 
 # Fairness
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_sex_name"))
 print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness

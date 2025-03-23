@@ -8,18 +8,18 @@ from sklearn.metrics import accuracy_score, auc, classification_report, confusio
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from check_explainability import compute_rge_values
-from check_fairness import compute_rga_parity
-from check_robustness import compute_rgr_values
-from core import rga
-from data_processing_credits import data_lending_clean
+from safeai_files.check_explainability import compute_rge_values
+from safeai_files.check_fairness import compute_rga_parity
+from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.core import rga
+from ca_original_data_2017.data_processing_credits_ca import data_lending_ca_clean
 
 # Data separation
-x = data_lending_clean.iloc[:, :-1]  # Features
-y = data_lending_clean.iloc[:, -1]  # Target (0 = approved, 1 = rejected)
+x = data_lending_ca_clean.drop(columns=['action_taken'])
+y = data_lending_ca_clean['action_taken']
 
 # Split into 80% training and 20% testing
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=20)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
 # Standardize features
 scaler = StandardScaler()
@@ -98,13 +98,20 @@ x_train_resampled, y_train_resampled = tl.fit_resample(x_train_scaled, y_train)
 x_train_resampled_pca = pca.transform(x_train_resampled)
 
 # Plot original dataset and after resampling
-plt.figure(figsize=(6, 6))
-plt.scatter(x_train_pca[:, 0], x_train_pca[:, 1], c=y_train, alpha=0.5, s=30, edgecolor='k', label='Original Dataset')
-plt.scatter(x_train_resampled_pca[:, 0], x_train_resampled_pca[:, 1], c=y_train_resampled, alpha=0.5, s=30, edgecolor='r', marker='x', label='After Tomek Links')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.title('Original vs. Resampled Dataset')
-plt.legend()
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+axes[0].scatter(x_train_pca[:, 0], x_train_pca[:, 1], c=y_train, alpha=0.5, s=30, edgecolor='k', label='Original')
+axes[0].set_title("Original Dataset")
+axes[0].set_xlabel("Principal Component 1")
+axes[0].set_ylabel("Principal Component 2")
+axes[0].legend()
+
+axes[1].scatter(x_train_resampled_pca[:, 0], x_train_resampled_pca[:, 1], c=y_train_resampled, alpha=0.5, s=30,
+                edgecolor='r', label='After Tomek Links')
+axes[1].set_title("After Tomek Links")
+axes[1].set_xlabel("Principal Component 1")
+axes[1].set_ylabel("Principal Component 2")
+axes[1].legend()
+plt.tight_layout()
 plt.show()
 
 # Again Logistic Regression

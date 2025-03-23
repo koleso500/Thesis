@@ -3,44 +3,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import torch
 
-from check_explainability import compute_rge_values
-from check_fairness import compute_rga_parity
-from check_robustness import compute_rgr_values
-from core import rga
-from torch_model import CreditModel
+from safeai_files.check_explainability import compute_rge_values
+from safeai_files.check_fairness import compute_rga_parity
+from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.core import rga
+from torch_for_credits.torch_model import CreditModel
 
 # Directory of the data
-save_dir = "saved_data"
+save_dir = "../saved_data"
 
 # Load torch tensors
-tensor_path = os.path.join(save_dir, "full_data_tensors.pth")
+tensor_path = os.path.join(save_dir, "full_data_tensors_ny_article.pth")
 tensor_data = torch.load(tensor_path)
-x_train_tensor = tensor_data["x_train_tensor"]
-y_train_tensor = tensor_data["y_train_tensor"]
-x_test_tensor = tensor_data["x_test_tensor"]
-y_test_tensor = tensor_data["y_test_tensor"]
+x_train_tensor = tensor_data["x_train_tensor_ny_article"]
+y_train_tensor = tensor_data["y_train_tensor_ny_article"]
+x_test_tensor = tensor_data["x_test_tensor_ny_article"]
+y_test_tensor = tensor_data["y_test_tensor_ny_article"]
 
 # Load best torch parameters
-best_params_path = os.path.join(save_dir, "best_torch_params.json")
+best_params_path = os.path.join(save_dir, "best_torch_params_ny_article.json")
 with open(best_params_path, "r", encoding="utf-8") as file:
     best_params = json.load(file)
 
 # Load other data
-x_train_scaled_names = pd.read_csv(os.path.join(save_dir, "x_train_scaled_names.csv"))
-x_test_scaled_names = pd.read_csv(os.path.join(save_dir, "x_test_scaled_names.csv"))
-y_train = np.load(os.path.join(save_dir, "y_train.npy"))
-y_test = np.load(os.path.join(save_dir, "y_test.npy"))
+x_train_scaled_names = pd.read_csv(os.path.join(save_dir, "x_train_scaled_names_ny_article.csv"))
+x_test_scaled_names = pd.read_csv(os.path.join(save_dir, "x_test_scaled_names_ny_article.csv"))
+y_train = np.load(os.path.join(save_dir, "y_train_ny_article.npy"))
+y_test = np.load(os.path.join(save_dir, "y_test_ny_article.npy"))
 
 # Load loss values
-loss_values = np.load(os.path.join(save_dir, "loss_values.npy"))
+loss_values = np.load(os.path.join(save_dir, "loss_values_ny_article.npy"))
 
-def evaluate_model():
+def evaluate_model_ny_article():
     # Load the best model
     best_model = CreditModel(x_train_scaled_names.shape[1], best_params[2], best_params[3])
-    best_model.load_state_dict(torch.load('saved_models/best_credit_model.pth', weights_only=True))
+    best_model.load_state_dict(torch.load('../saved_models/best_credit_model_ny_article.pth', weights_only=True))
     best_model.eval()
 
     # Make predictions on the test set
@@ -81,4 +81,4 @@ def evaluate_model():
     print(compute_rgr_values(x_test_scaled_names, y_pred_prob, best_model, list(x_test_scaled_names.columns)))
 
 if __name__ == "__main__":
-    evaluate_model()
+    evaluate_model_ny_article()

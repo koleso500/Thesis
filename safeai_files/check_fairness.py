@@ -3,10 +3,10 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 import torch
 from typing import Union
-from util.utils import check_nan, convert_to_dataframe, find_yhat
+from safeai_files.utils import check_nan, convert_to_dataframe, find_yhat
 from xgboost import XGBClassifier, XGBRegressor
 
-from core import rga
+from safeai_files.core import rga
 
 def compute_rga_parity(xtrain: pd.DataFrame, 
                        xtest: pd.DataFrame, 
