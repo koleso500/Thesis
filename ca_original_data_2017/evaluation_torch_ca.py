@@ -40,7 +40,7 @@ loss_values = np.load(os.path.join(save_dir, "loss_values_ca.npy"))
 def evaluate_model_ca():
     # Load the best model
     best_model = CreditModel(x_train_scaled_names.shape[1], best_params[2], best_params[3])
-    best_model.load_state_dict(torch.load('../saved_models/best_credit_model_ca.pth', weights_only=True))
+    best_model.load_state_dict(torch.load('../saved_models/best_torch_model_ca.pth', weights_only=True))
     best_model.eval()
 
     # Make predictions on the test set

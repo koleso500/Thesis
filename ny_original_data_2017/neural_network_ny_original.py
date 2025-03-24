@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from ny_original_data_2017.data_processing_credits_ny_original import data_lending_ny_clean
+from ny_original_data_2017.data_processing_ny_original import data_lending_ny_clean
 from torch_for_credits.torch_model import CreditModel
 
 # Data separation
@@ -154,10 +154,10 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         best_model_probabilities = y_val_pred.cpu().numpy()
 
         # Save the best model
-        best_torch_model_path = os.path.join(model_dir, "best_credit_model_ny_original.pth")
+        best_torch_model_path = os.path.join(model_dir, "best_torch_model_ny_original.pth")
         if model is not None:
             torch.save(model.state_dict(), best_torch_model_path)
-            print(f"New best model saved at {best_model_path}")
+            print(f"New best model saved at {model_dir}")
         else:
             print("Model was not initialized")
 

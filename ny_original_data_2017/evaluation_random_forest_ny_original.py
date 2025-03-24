@@ -1,55 +1,27 @@
-import json
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, StackingClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
-from sklearn.model_selection import train_test_split
-from xgboost import XGBClassifier
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import compute_rgr_values
 from safeai_files.core import rga
-from ca_original_data_2017.data_processing_credits_ca import data_lending_ca_clean
 
-# Data separation
-x = data_lending_ca_clean.drop(columns=['action_taken'])
-y = data_lending_ca_clean['action_taken']
-
-# Split into 80% training and 20% testing
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
-print("Training set shape:", x_train.shape)
-print("Testing set shape:", x_test.shape)
-
-# Load best parameters for models
-with open(os.path.join("../saved_data", "best_rf_params_ca.json"), "r", encoding="utf-8") as file_rf:
-    best_rf_params = json.load(file_rf)
-
-with open(os.path.join("../saved_data", "best_xgb_params_ca.json"), "r", encoding="utf-8") as file_xgb:
-    best_xgb_params = json.load(file_xgb)
-
-# Models
-rf_clf = RandomForestClassifier(**best_rf_params, random_state=42)
-xgb_clf = XGBClassifier(**best_xgb_params, objective='binary:logistic', eval_metric='logloss', random_state=42)
-lr_clf = LogisticRegression()
-
-# Stacking Classifier with Logistic Regression as meta-estimator
-stacking_clf = StackingClassifier(
-    estimators=[('rf', rf_clf), ('xgb', xgb_clf)],
-    final_estimator=lr_clf
-)
-
-# Train
-stacking_clf.fit(x_train, y_train)
+# Load best model and variables
+best_model = joblib.load("../saved_models/best_rf_model_ny_original.joblib")
+x_train = pd.read_csv("../saved_data/x_train_rf_ny_original.csv")
+x_test = pd.read_csv("../saved_data/x_test_rf_ny_original.csv")
+y_train = pd.read_csv("../saved_data/y_train_rf_ny_original.csv")
+y_test = pd.read_csv("../saved_data/y_test_rf_ny_original.csv")
+y_test = y_test.values.tolist()
 
 # Make predictions
-y_pred = stacking_clf.predict(x_test)
-y_prob = stacking_clf.predict_proba(x_test)
+y_pred = best_model.predict(x_test)
+y_prob = best_model.predict_proba(x_test)[:, 1]
 
-#AUC
+# AUC (for future use)
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
 print(roc_auc)
@@ -99,10 +71,11 @@ rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-print(compute_rge_values(x_train, x_test, y_prob, stacking_clf, ["loan_purpose"]))
+print(compute_rge_values(x_train, x_test, y_prob, best_model, ["loan_purpose"]))
 
 # Fairness
-print(compute_rga_parity(x_train, x_test, y_test, y_prob, stacking_clf, "applicant_race_1"))
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_sex_name"))
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness
-print(compute_rgr_values(x_test, y_prob, stacking_clf, list(x_test.columns)))
+print(compute_rgr_values(x_test, y_prob, best_model, list(x_test.columns)))

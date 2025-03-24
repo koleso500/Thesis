@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import OneCycleLR
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from ny_article_data_2017.data_processing_credits_ny_article import data_lending_ny_clean
+from ny_article_data_2017.data_processing_ny_article import data_lending_ny_clean
 from torch_for_credits.torch_model import CreditModel
 
 # Data separation
@@ -46,21 +46,21 @@ x_test_tensor = torch.tensor(x_test_scaled, dtype=torch.float32)
 y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1)
 
 # Hyperparameters tuning
-batch_sizes = [64, 128, 256]
+batch_sizes = [256] #64, 128
 max_lr = 0.01
-hidden_layer_sizes = [(32,16), (64, 32, 16), (128, 64, 32)]
-dropout_rates = [0.2, 0.3]
+hidden_layer_sizes = [(128, 64, 32)] #(32,16), (64, 32, 16)
+dropout_rates = [0.2] #0.3
 
 # Preparation
 k_folds = 3
 kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
 best_accuracy = 0
+best_f1 = 0
 best_params = None
 best_model_path = None
 loss_values = []
 model = None
 model_dir = "../saved_models"
-os.makedirs(model_dir, exist_ok=True) # Create directory if it doesn't exist
 
 # Automatic mixed precision
 scaler_amp = torch.amp.GradScaler(device="cuda")
@@ -69,6 +69,7 @@ scaler_amp = torch.amp.GradScaler(device="cuda")
 for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_layer_sizes,
                                                               dropout_rates):
     fold_accuracies = []
+    fold_f1_scores = []
 
     for fold, (train_idx, val_idx) in enumerate(kf.split(x_train)):
         x_train_fold, x_val_fold = x_train.iloc[train_idx], x_train.iloc[val_idx]
@@ -143,35 +144,38 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
             y_val_pred = model(x_val_fold_tensor)
             y_val_pred_labels = (y_val_pred > 0.5).float()
             val_accuracy = accuracy_score(y_val_fold_tensor.cpu().numpy(), y_val_pred_labels.cpu().numpy())
+            val_f1 = f1_score(y_val_fold_tensor.cpu().numpy(), y_val_pred_labels.cpu().numpy(), average="macro")
             fold_accuracies.append(val_accuracy)
+            fold_f1_scores.append(val_f1)
 
     avg_fold_accuracy = np.mean(fold_accuracies)
+    avg_fold_f1 = np.mean(fold_f1_scores)
 
     # Track best model
-    if avg_fold_accuracy > best_accuracy:
-        best_accuracy = avg_fold_accuracy
+    if avg_fold_f1 > best_f1:
+        best_f1 = avg_fold_f1
         best_params = (batch_size, max_lr, layers, dropout_rate)
         best_model_probabilities = y_val_pred.cpu().numpy()
 
         # Save the best model
-        best_torch_model_path = os.path.join(model_dir, "best_credit_model_ny_article.pth")
+        best_torch_model_path = os.path.join(model_dir, "best_torch_model_ny_article.pth")
         if model is not None:
             torch.save(model.state_dict(), best_torch_model_path)
-            print(f"New best model saved at {best_model_path}")
+            print(f"New best model saved at {model_dir}")
         else:
             print("Model was not initialized")
 
-print("\nBest Hyperparameters:", best_params, "with Accuracy:", best_accuracy)
-print(f"Best model saved at {best_model_path}")
+print("\nBest Hyperparameters:", best_params, "with F1:", best_f1)
+print(f"Best model saved at {model_dir}")
 
 # Save variables to the folder
 # Tensors
 tensor_path = os.path.join("../saved_data", "full_data_tensors_ny_article.pth")
 torch.save({
-    "x_train_tensor": x_train_tensor,
-    "y_train_tensor": y_train_tensor,
-    "x_test_tensor": x_test_tensor,
-    "y_test_tensor": y_test_tensor,
+    "x_train_tensor_ny_article": x_train_tensor,
+    "y_train_tensor_ny_article": y_train_tensor,
+    "x_test_tensor_ny_article": x_test_tensor,
+    "y_test_tensor_ny_article": y_test_tensor,
 }, tensor_path)
 
 # Best parameters

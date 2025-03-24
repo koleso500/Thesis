@@ -13,7 +13,7 @@ from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import compute_rgr_values
 from safeai_files.core import rga
-from ny_original_data_2017.data_processing_credits_ny_original import data_lending_ny_clean
+from ny_original_data_2017.data_processing_ny_original import data_lending_ny_clean
 
 # Data separation
 x = data_lending_ny_clean.drop(columns=['action_taken'])
@@ -47,7 +47,7 @@ stacking_clf.fit(x_train, y_train)
 
 # Make predictions
 y_pred = stacking_clf.predict(x_test)
-y_prob = stacking_clf.predict_proba(x_test)
+y_prob = stacking_clf.predict_proba(x_test)[:, 1]
 
 #AUC
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)

@@ -1,55 +1,21 @@
-import json
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
-import shap
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
-from sklearn.model_selection import GridSearchCV, train_test_split
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import compute_rgr_values
 from safeai_files.core import rga
-from ca_original_data_2017.data_processing_credits_ca import data_lending_ca_clean
 
-# Data separation
-x = data_lending_ca_clean.drop(columns=['action_taken'])
-y = data_lending_ca_clean['action_taken']
-
-# Split into 80% training and 20% testing
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
-print("Training set shape:", x_train.shape)
-print("Testing set shape:", x_test.shape)
-
-# Random Forest model
-rf_model = RandomForestClassifier(random_state=42)
-
-# Hyperparameters grid
-params_grid = {
-    'n_estimators': [500], #100,200,300
-    'max_depth': [10], #None, 5, 15
-    'max_features': ['sqrt'], #'log2', x_train.shape[1], 5, int(x_train.shape[1] / 2),
-    'min_samples_leaf': [8] #1,2,4
-}
-
-# Grid search
-grid_search = GridSearchCV(rf_model, params_grid, cv=3, scoring='roc_auc', n_jobs=-1, verbose=3)
-grid_search.fit(x_train, y_train)
-
-# Best model, best parameters and AUC
-best_model = grid_search.best_estimator_
-best_params = grid_search.best_params_
-print("Best Parameters:", best_params)
-print("Best AUC:", grid_search.best_score_)
-
-# Save best parameters
-json_str = json.dumps(best_params, indent=4)
-file_path = os.path.join("../saved_data", "best_rf_params_ca.json")
-with open(file_path, "w", encoding="utf-8") as file:
-    file.write(json_str)
-print("Best parameters saved successfully!")
+# Load best model and variables
+best_model = joblib.load("../saved_models/best_rf_model_ny_article.joblib")
+x_train = pd.read_csv("../saved_data/x_train_rf_ny_article.csv")
+x_test = pd.read_csv("../saved_data/x_test_rf_ny_article.csv")
+y_train = pd.read_csv("../saved_data/y_train_rf_ny_article.csv")
+y_test = pd.read_csv("../saved_data/y_test_rf_ny_article.csv")
+y_test = y_test.values.tolist()
 
 # Make predictions
 y_pred = best_model.predict(x_test)
@@ -98,11 +64,6 @@ y_pred_best = np.where(y_prob >= best_threshold, 1, 0)
 print("Accuracy:", accuracy_score(y_test, y_pred_best))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_best))
 print("Classification Report:\n", classification_report(y_test, y_pred_best))
-
-# SHAP plot
-explainer = shap.Explainer(best_model)
-shap_values = explainer(x_test)
-shap.summary_plot(shap_values, x_test)
 
 # Integrating safeai
 # Accuracy

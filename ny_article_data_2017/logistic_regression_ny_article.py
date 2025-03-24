@@ -12,7 +12,7 @@ from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import compute_rgr_values
 from safeai_files.core import rga
-from ny_article_data_2017.data_processing_credits_ny_article import data_lending_ny_clean
+from ny_article_data_2017.data_processing_ny_article import data_lending_ny_clean
 
 # Data separation
 x = data_lending_ny_clean.drop(columns=['response'])

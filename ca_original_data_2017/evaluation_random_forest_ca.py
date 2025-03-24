@@ -1,57 +1,21 @@
-import json
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
-import shap
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
-from sklearn.model_selection import GridSearchCV, train_test_split
-import xgboost as xgb
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import compute_rgr_values
 from safeai_files.core import rga
-from ca_original_data_2017.data_processing_credits_ca import data_lending_ca_clean
 
-# Data separation
-x = data_lending_ca_clean.drop(columns=['action_taken'])
-y = data_lending_ca_clean['action_taken']
-
-# Split into 80% training and 20% testing
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
-print("Training set shape:", x_train.shape)
-print("Testing set shape:", x_test.shape)
-
-# XGBoost classifier
-xgb_model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', random_state=42)
-
-# Hyperparameters grid
-params_grid = {
-    'n_estimators': [100, 200, 300],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'max_depth': [3, 5, 7],
-    'subsample': [0.7, 1],
-    'colsample_bytree': [0.7, 1],
-    'gamma': [0, 0.1, 0.2]
-}
-
-# Grid search
-grid_search = GridSearchCV(xgb_model, params_grid, cv=3, scoring='roc_auc', n_jobs=-1, verbose=3)
-grid_search.fit(x_train, y_train)
-
-# Best model, best parameters and AUC
-best_model = grid_search.best_estimator_
-best_params = grid_search.best_params_
-print("Best Parameters:", best_params)
-print("Best AUC:", grid_search.best_score_)
-
-# Save best parameters
-json_str = json.dumps(best_params, indent=4)
-file_path = os.path.join("../saved_data", "best_xgb_params_ca.json")
-with open(file_path, "w", encoding="utf-8") as file:
-    file.write(json_str)
-print("Best parameters saved successfully!")
+# Load best model and variables
+best_model = joblib.load("../saved_models/best_rf_model_ca.joblib")
+x_train = pd.read_csv("../saved_data/x_train_rf_ca.csv")
+x_test = pd.read_csv("../saved_data/x_test_rf_ca.csv")
+y_train = pd.read_csv("../saved_data/y_train_rf_ca.csv")
+y_test = pd.read_csv("../saved_data/y_test_rf_ca.csv")
+y_test = y_test.values.tolist()
 
 # Make predictions
 y_pred = best_model.predict(x_test)
@@ -68,7 +32,7 @@ valid_indices = np.where(fpr < fpr_threshold)[0]
 partial_auc = auc(fpr[valid_indices], tpr[valid_indices]) / fpr_threshold
 print(f"Partial AUC (FPR < {fpr_threshold}): {partial_auc:.4f}")
 
-# ROC curve
+#ROC curve
 plt.figure()
 plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
 plt.plot([0, 1], [0, 1], color='grey', linestyle='--')
@@ -101,15 +65,6 @@ print("Accuracy:", accuracy_score(y_test, y_pred_best))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_best))
 print("Classification Report:\n", classification_report(y_test, y_pred_best))
 
-# Feature importance plot
-xgb.plot_importance(best_model)
-plt.show()
-
-# SHAP plot
-explainer = shap.Explainer(best_model)
-shap_values = explainer(x_test)
-shap.summary_plot(shap_values, x_test)
-
 # Integrating safeai
 # Accuracy
 rga_class = rga(y_test, y_prob)
@@ -119,6 +74,7 @@ print(f"RGA value is equal to {rga_class}")
 print(compute_rge_values(x_train, x_test, y_prob, best_model, ["loan_purpose"]))
 
 # Fairness
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_sex_name"))
 print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness
