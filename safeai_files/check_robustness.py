@@ -99,6 +99,49 @@ def compute_rgr_values(xtest: pd.DataFrame,
     rgr_df = pd.DataFrame(rgr_list, index= list(variables), columns=["RGR"]).sort_values(by="RGR", ascending=False)
     return rgr_df
 
-    
+
+def rgr_all(xtest: pd.DataFrame,
+                     yhat: list,
+                     model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,
+                     torch.nn.Module],
+                     perturbation_percentage=0.05):
+    """
+    Compute RANK GRADUATION Robustness (RGR) MEASURE for all variables simultaneously.
+
+    Parameters
+    ----------
+    xtest : pd.DataFrame
+            A dataframe including test data.
+    yhat : list
+            A list of predicted values.
+    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
+            A trained model, which could be a classifier or regressor.
+    perturbation_percentage: float
+            A percentage value for perturbation.
+
+    Returns
+    -------
+    float
+            The overall RGR value.
+    """
+    # Convert inputs to DataFrames and concatenate them
+    xtest, yhat = convert_to_dataframe(xtest, yhat)
+
+    # Check for missing values
+    check_nan(xtest, yhat)
+
+    # Get all variables in xtest
+    variables = xtest.columns.tolist()
+
+    # Perturb all variables simultaneously
+    xtest_pert = xtest.copy()
+    for var in variables:
+        xtest_pert[var] = perturb(xtest_pert, var, perturbation_percentage)[var]
+
+    # Get perturbed predictions
+    yhat_pert = find_yhat(model, xtest_pert)
+
+    # Compute and return RGR value
+    return rga(yhat, yhat_pert)
 
 

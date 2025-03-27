@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import OneCycleLR
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -40,6 +40,7 @@ x_train_scaled_names = pd.DataFrame(x_train_scaled, columns=x_train.columns, ind
 x_test_scaled_names = pd.DataFrame(x_test_scaled, columns=x_test.columns, index=x_test.index)
 
 # Convert to PyTorch tensors
+torch.manual_seed(42)
 x_train_tensor = torch.tensor(x_train_scaled, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).view(-1, 1) #1D (n) -> 2D (n,1)
 x_test_tensor = torch.tensor(x_test_scaled, dtype=torch.float32)
@@ -48,19 +49,20 @@ y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1)
 # Hyperparameters tuning
 batch_sizes = [64, 128, 256]
 max_lr = 0.01
-hidden_layer_sizes = [(32,16), (64, 32, 16), (128, 64, 32)]
+hidden_layer_sizes = [64, (32,16), (64, 32, 16), (128, 64, 32)]
 dropout_rates = [0.2, 0.3]
 
 # Preparation
 k_folds = 3
 kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
-best_accuracy = 0
+best_f1 = 0
+best_threshold = 0
 best_params = None
 best_model_path = None
 loss_values = []
+max_fold_f1 = 0
 model = None
 model_dir = "../saved_models"
-os.makedirs(model_dir, exist_ok=True) # Create directory if it doesn't exist
 
 # Automatic mixed precision
 scaler_amp = torch.amp.GradScaler(device="cuda")
@@ -69,20 +71,17 @@ scaler_amp = torch.amp.GradScaler(device="cuda")
 for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_layer_sizes,
                                                               dropout_rates):
     fold_accuracies = []
+    fold_f1_scores = []
 
-    for fold, (train_idx, val_idx) in enumerate(kf.split(x_train)):
-        x_train_fold, x_val_fold = x_train.iloc[train_idx], x_train.iloc[val_idx]
-        y_train_fold, y_val_fold = y_train.iloc[train_idx], y_train.iloc[val_idx]
+    for fold, (train_idx, val_idx) in enumerate(kf.split(x_train_tensor)):
 
-        # Standardize each fold
-        x_train_fold_scaled = scaler.transform(x_train_fold)
-        x_val_fold_scaled = scaler.transform(x_val_fold)
-
-        # Convert to tensors
-        x_train_fold_tensor = torch.tensor(x_train_fold_scaled, dtype=torch.float32, device=device)
-        y_train_fold_tensor = torch.tensor(y_train_fold.values, dtype=torch.float32, device=device).view(-1, 1)
-        x_val_fold_tensor = torch.tensor(x_val_fold_scaled, dtype=torch.float32, device=device)
-        y_val_fold_tensor = torch.tensor(y_val_fold.values, dtype=torch.float32, device=device).view(-1, 1)
+        # Slicing
+        train_idx_tensor = torch.tensor(train_idx, dtype=torch.long, device="cpu")
+        val_idx_tensor = torch.tensor(val_idx, dtype=torch.long, device="cpu")
+        x_train_fold_tensor = x_train_tensor[train_idx_tensor].to(device)
+        y_train_fold_tensor = y_train_tensor[train_idx_tensor].to(device)
+        x_val_fold_tensor = x_train_tensor[val_idx_tensor].to(device)
+        y_val_fold_tensor = y_train_tensor[val_idx_tensor].to(device)
 
         # DataLoader
         train_dataset = torch.utils.data.TensorDataset(x_train_fold_tensor, y_train_fold_tensor)
@@ -90,7 +89,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
 
         # Define model
         model = CreditModel(x_train.shape[1], layers, dropout_rate).to(device)
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss().to(device)
         optimizer = optim.Adam(model.parameters())
 
         # 1Cycle Learning Rate
@@ -104,6 +103,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         for epoch in range(50):  # Train for up to 50 epochs
             model.train()
             epoch_loss = 0
+            first_batch = True
             for batch_x, batch_y in train_loader:
                 batch_x, batch_y = batch_x.to(device, non_blocking=True), batch_y.to(device, non_blocking=True)  # Move batch to GPU
                 optimizer.zero_grad()
@@ -113,8 +113,9 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
                 scaler_amp.scale(loss).backward()
                 scaler_amp.step(optimizer)
                 scaler_amp.update()
-                if counter < patience:
-                    scheduler.step() #Update Learning rate
+                if not first_batch:  # Scheduler doesn't step in the first batch
+                    scheduler.step()
+                first_batch = False  # Scheduler updates for the next batches
 
                 epoch_loss += loss.item()
 
@@ -141,28 +142,45 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         # Evaluate on validation set
         with torch.no_grad():
             y_val_pred = model(x_val_fold_tensor)
-            y_val_pred_labels = (y_val_pred > 0.5).float()
-            val_accuracy = accuracy_score(y_val_fold_tensor.cpu().numpy(), y_val_pred_labels.cpu().numpy())
-            fold_accuracies.append(val_accuracy)
 
-    avg_fold_accuracy = np.mean(fold_accuracies)
+            # Apply sigmoid to convert to probabilities if needed
+            if y_val_pred.shape[1] == 1:
+                y_val_pred_prob = torch.sigmoid(y_val_pred).cpu().numpy()
+            else:
+                y_val_pred_prob = y_val_pred.cpu().numpy()
 
-    # Track best model
-    if avg_fold_accuracy > best_accuracy:
-        best_accuracy = avg_fold_accuracy
-        best_params = (batch_size, max_lr, layers, dropout_rate)
-        best_model_probabilities = y_val_pred.cpu().numpy()
+            # Convert to numpy for evaluation
+            y_val_fold_numpy = y_val_fold_tensor.cpu().numpy()
 
-        # Save the best model
-        best_torch_model_path = os.path.join(model_dir, "best_torch_model_ca.pth")
-        if model is not None:
-            torch.save(model.state_dict(), best_torch_model_path)
-            print(f"New best model saved at {model_dir}")
-        else:
-            print("Model was not initialized")
+            # Flatten
+            y_val_pred_prob_flat = y_val_pred_prob.flatten()
 
-print("\nBest Hyperparameters:", best_params, "with Accuracy:", best_accuracy)
-print(f"Best model saved at {best_model_path}")
+            for threshold in np.arange(0.0, 1.01, 0.01):
+                y_val_pred_labels = np.where(y_val_pred_prob_flat > threshold, 1, 0)
+                f1 = f1_score(y_val_fold_numpy, y_val_pred_labels)
+                fold_f1_scores.append(f1)
+
+                # Update best F1 score and corresponding threshold
+                if f1 > max_fold_f1:
+                    max_fold_f1 = f1
+                    best_threshold = threshold
+
+            # Track best model
+            if max_fold_f1 > best_f1:
+                best_f1 = max_fold_f1
+                best_params = (batch_size, max_lr, layers, dropout_rate)
+                best_model_probabilities = y_val_pred_prob
+
+                # Save the best model
+                best_torch_model_path = os.path.join(model_dir, "best_torch_model_ca.pth")
+                if model is not None:
+                    torch.save(model.state_dict(), best_torch_model_path)
+                    print(f"New best model saved at {model_dir}")
+                else:
+                    print("Model was not initialized")
+
+print("\nBest Hyperparameters:", best_params, "with F1:", best_f1)
+print(f"Best model saved at {model_dir}")
 
 # Save variables to the folder
 # Tensors

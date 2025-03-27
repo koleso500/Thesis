@@ -44,6 +44,7 @@ def evaluate_model_ny_article():
     best_model.eval()
 
     # Make predictions on the test set
+    torch.manual_seed(42)
     with torch.no_grad():
         y_pred = best_model(x_test_tensor)
 
@@ -119,7 +120,7 @@ def evaluate_model_ny_article():
     print(f"RGA value is equal to {rga_class}")
 
     # Explainability
-    print(compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, ["loan_purpose"]))
+    print(compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, ["applicant_sex_name"]))
 
     # Fairness
     print(compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model, "applicant_race_1"))

@@ -3,6 +3,8 @@ import torch
 class CreditModel(torch.nn.Module):
     def __init__(self, input_size, hidden_layers, dropout_rate):
         super(CreditModel, self).__init__()
+        if isinstance(hidden_layers, int):
+            hidden_layers = [hidden_layers]
         self.layers = torch.nn.ModuleList()
         prev_size = input_size
 
