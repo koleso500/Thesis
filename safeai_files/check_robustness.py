@@ -100,6 +100,53 @@ def compute_rgr_values(xtest: pd.DataFrame,
     return rgr_df
 
 
+def rgr_single(xtest: pd.DataFrame,
+                yhat: list,
+                model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module],
+                variable: str,
+                perturbation_percentage=0.05):
+    """
+    Compute RANK GRADUATION Robustness (RGR) MEASURE for a single variable.
+
+    Parameters
+    ----------
+    xtest : pd.DataFrame
+            A dataframe including test data.
+    yhat : list
+            A list of predicted values.
+    model : Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
+            A trained model, which could be a classifier or regressor.
+    variable : str
+            The variable (column) in xtest to be perturbed.
+    perturbation_percentage: float
+            A percentage value for perturbation.
+
+    Returns
+    -------
+    float
+            The RGR value for the specified variable.
+    """
+    # Convert inputs to DataFrames and concatenate them
+    xtest, yhat = convert_to_dataframe(xtest, yhat)
+
+    # Check for missing values
+    check_nan(xtest, yhat)
+
+    # Variables should be a list
+    validate_variables(variable, xtest)
+
+    # Perturb only the selected variable
+    xtest_pert = xtest.copy()
+    xtest_pert[variable] = perturb(xtest_pert, variable, perturbation_percentage)[variable]
+
+    # Get perturbed predictions
+    yhat_pert = find_yhat(model, xtest_pert)
+
+    # Compute and return RGR value for the selected variable
+    return rga(yhat, yhat_pert)
+
+
+
 def rgr_all(xtest: pd.DataFrame,
                      yhat: list,
                      model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator,

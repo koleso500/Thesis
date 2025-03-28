@@ -82,13 +82,13 @@ def convert_to_dataframe(*args):
     return [pd.DataFrame(arg).reset_index(drop=True) for arg in args]
 
 
-def validate_variables(variables: list, xtrain: pd.DataFrame):
+def validate_variables(variables: Union[list, str], xtrain: pd.DataFrame):
     """
     Check if variables are valid and exist in the train dataset.
 
     Parameters
     ----------
-    variables: list
+    variables: list or str
             Variables.
     xtrain : pd.DataFrame
             A dataframe including train data.
@@ -96,9 +96,11 @@ def validate_variables(variables: list, xtrain: pd.DataFrame):
     Raises
     -------
     ValueError
-            If variables is not a list or if any variable does not exist in xtrain.
+            If variables is not a list, not a string or if any variable does not exist in xtrain.
     """
-    if not isinstance(variables, list):
+    if isinstance(variables, str):
+        variables = [variables]
+    elif not isinstance(variables, list):
         raise ValueError("Variables input must be a list")
     for var in variables:
         if var not in xtrain.columns:
