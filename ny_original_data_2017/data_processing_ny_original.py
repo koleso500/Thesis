@@ -51,6 +51,7 @@ data_lending_ny_clean = data_lending_ny_dropped.dropna(axis='index')
 data_lending_ny_clean.loc[:, 'action_taken'] = data_lending_ny_clean['action_taken'].map({1: 0, 3: 1})
 print(data_lending_ny_clean.shape)
 print(data_lending_ny_clean['action_taken'].value_counts())
+data_lending_ny_clean.to_csv(os.path.join("../saved_data", "data_lending_clean_ny_original.csv"), index=False)
 
 # Check correlations
 correlation_matrix = data_lending_ny_clean.corr()

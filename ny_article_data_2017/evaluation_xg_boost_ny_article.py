@@ -7,7 +7,7 @@ import xgboost as xgb
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
-from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.check_robustness import compute_rgr_values, rgr_all, rgr_single
 from safeai_files.core import rga
 
 # Load best model and variables
@@ -79,7 +79,10 @@ print(f"RGA value is equal to {rga_class}")
 print(compute_rge_values(x_train, x_test, y_prob, best_model, ["loan_purpose"]))
 
 # Fairness
+print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_sex"))
 print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness
 print(compute_rgr_values(x_test, y_prob, best_model, list(x_test.columns)))
+print(rgr_all(x_test, y_prob, best_model, 0.2))
+print(rgr_single(x_test, y_prob, best_model, "loan_purpose", 0.2))

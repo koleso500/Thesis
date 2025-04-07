@@ -11,10 +11,10 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from ny_article_data_2017.data_processing_ny_article import data_lending_ny_clean
 from torch_for_credits.torch_model import CreditModel
 
 # Data separation
+data_lending_ny_clean = pd.read_csv("../saved_data/data_lending_clean_ny_article.csv")
 x = data_lending_ny_clean.drop(columns=['response'])
 y = data_lending_ny_clean['response']
 

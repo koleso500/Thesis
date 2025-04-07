@@ -78,6 +78,6 @@ print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant
 print(compute_rga_parity(x_train, x_test, y_test, y_prob, best_model, "applicant_race_1"))
 
 # Robustness
-print(rgr_all(x_test, y_prob, best_model, 0.5))
-print(rgr_single(x_test, y_prob, best_model, "loan_purpose", 0.5))
-print(compute_rgr_values(x_test, y_prob, best_model, list(x_test.columns), 0.5))
+print(compute_rgr_values(x_test, y_prob, best_model, list(x_test.columns)))
+print(rgr_all(x_test, y_prob, best_model, 0.2))
+print(rgr_single(x_test, y_prob, best_model, "loan_purpose", 0.2))

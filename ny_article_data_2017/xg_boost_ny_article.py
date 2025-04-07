@@ -1,12 +1,14 @@
 import joblib
 import json
+import optuna
+from optuna.visualization import plot_optimization_history, plot_param_importances, plot_slice, plot_parallel_coordinate
 import os
-from sklearn.model_selection import GridSearchCV, train_test_split
+import pandas as pd
+from sklearn.model_selection import cross_val_score, train_test_split
 import xgboost as xgb
 
-from ny_article_data_2017.data_processing_ny_article import data_lending_ny_clean
-
 # Data separation
+data_lending_ny_clean = pd.read_csv("../saved_data/data_lending_clean_ny_article.csv")
 x = data_lending_ny_clean.drop(columns=['response'])
 y = data_lending_ny_clean['response']
 
@@ -21,28 +23,32 @@ x_test.to_csv(os.path.join("../saved_data", "x_test_xgb_ny_article.csv"), index=
 y_train.to_csv(os.path.join("../saved_data", "y_train_xgb_ny_article.csv"), index=False)
 y_test.to_csv(os.path.join("../saved_data", "y_test_xgb_ny_article.csv"), index=False)
 
-# XGBoost classifier
-xgb_model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', random_state=42)
+# XGBoost classifier with Optuna
+def objective(trial):
+    params = {
+        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+        'max_depth': trial.suggest_int('max_depth', 3, 10),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+        'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+        'gamma': trial.suggest_float('gamma', 0, 5),
+        'reg_alpha': trial.suggest_float('reg_alpha', 0, 5),
+        'reg_lambda': trial.suggest_float('reg_lambda', 0, 5),
+        'random_state': 42
+    }
 
-# Hyperparameters grid
-params_grid = {
-    'n_estimators': [300], #100, 200
-    'learning_rate': [0.01], #0.1, 0.2
-    'max_depth': [7], #3, 5
-    'subsample': [0.7, 1],
-    'colsample_bytree': [0.7, 1],
-    'gamma': [0.2] #0, 0.1
-}
+    xgb_model = xgb.XGBClassifier(**params, objective='binary:logistic', eval_metric='logloss')
+    score = cross_val_score(xgb_model, x_train, y_train, scoring='f1', cv=5).mean()
+    return score
 
-# Grid search
-grid_search = GridSearchCV(xgb_model, params_grid, cv=3, scoring='roc_auc', n_jobs=-1, verbose=3)
-grid_search.fit(x_train, y_train)
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=30)
 
-# Best model, best parameters and AUC
-best_model = grid_search.best_estimator_
-best_params = grid_search.best_params_
+# Best model, parameters and F1
+best_params = study.best_trial.params
+best_model = xgb.XGBClassifier(**best_params, objective='binary:logistic', eval_metric='logloss')
+best_model.fit(x_train, y_train)
 print("Best Parameters:", best_params)
-print("Best AUC:", grid_search.best_score_)
 
 # Save best parameters and model
 json_str = json.dumps(best_params, indent=4)
@@ -53,3 +59,9 @@ print("Best parameters saved successfully!")
 
 model_path = os.path.join("../saved_models", "best_xgb_model_ny_article.joblib")
 joblib.dump(best_model, model_path)
+
+# Some plots
+plot_optimization_history(study).show()
+plot_param_importances(study).show()
+plot_parallel_coordinate(study).show()
+plot_slice(study).show()

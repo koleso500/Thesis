@@ -1,12 +1,14 @@
 import joblib
 import json
+import optuna
+from optuna.visualization import plot_optimization_history, plot_param_importances, plot_slice, plot_parallel_coordinate
 import os
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, train_test_split
-
-from ny_original_data_2017.data_processing_ny_original import data_lending_ny_clean
+from sklearn.model_selection import cross_val_score, train_test_split
 
 # Data separation
+data_lending_ny_clean = pd.read_csv("../saved_data/data_lending_clean_ny_original.csv")
 x = data_lending_ny_clean.drop(columns=['action_taken'])
 y = data_lending_ny_clean['action_taken']
 
@@ -21,26 +23,30 @@ x_test.to_csv(os.path.join("../saved_data", "x_test_rf_ny_original.csv"), index=
 y_train.to_csv(os.path.join("../saved_data", "y_train_rf_ny_original.csv"), index=False)
 y_test.to_csv(os.path.join("../saved_data", "y_test_rf_ny_original.csv"), index=False)
 
-# Random Forest model
-rf_model = RandomForestClassifier(random_state=42)
+# Random Forest with Optuna
+def objective(trial):
+    params = {
+        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+        'max_depth': trial.suggest_categorical('max_depth', [None, 5, 10, 15, 20]),
+        'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
+        'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 20),
+        'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                                                   0.8, 0.9, 1]),
+        'bootstrap': trial.suggest_categorical('bootstrap', [True, False])
+    }
 
-# Hyperparameters grid
-params_grid = {
-    'n_estimators': [500], #100,200,300
-    'max_depth': [10], #None, 5, 15
-    'max_features': ['sqrt'], #'log2', x_train.shape[1], 5, int(x_train.shape[1] / 2),
-    'min_samples_leaf': [8] #1,2,4
-}
+    rf_model = RandomForestClassifier(**params, random_state=42, n_jobs=-1)
+    score = cross_val_score(rf_model, x_train, y_train, scoring='f1', cv=5).mean()
+    return score
 
-# Grid search
-grid_search = GridSearchCV(rf_model, params_grid, cv=3, scoring='roc_auc', n_jobs=-1, verbose=3)
-grid_search.fit(x_train, y_train)
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=30)
 
-# Best model, best parameters and AUC
-best_model = grid_search.best_estimator_
-best_params = grid_search.best_params_
+# Best model, parameters and F1
+best_params = study.best_trial.params
+best_model = RandomForestClassifier(**best_params, random_state=42, n_jobs=-1)
+best_model.fit(x_train, y_train)
 print("Best Parameters:", best_params)
-print("Best AUC:", grid_search.best_score_)
 
 # Save best parameters and model
 json_str = json.dumps(best_params, indent=4)
@@ -51,3 +57,9 @@ print("Best parameters saved successfully!")
 
 model_path = os.path.join("../saved_models", "best_rf_model_ny_original.joblib")
 joblib.dump(best_model, model_path)
+
+#  Some plots
+plot_optimization_history(study).show()
+plot_param_importances(study).show()
+plot_parallel_coordinate(study).show()
+plot_slice(study).show()
