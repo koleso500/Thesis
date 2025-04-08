@@ -30,8 +30,11 @@ def objective(trial):
         'max_depth': trial.suggest_categorical('max_depth', [None, 5, 10, 15, 20]),
         'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
         'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 20),
+        'min_weight_fraction_leaf': trial.suggest_float('min_weight_fraction_leaf', 0.0, 0.5),
         'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                                                    0.8, 0.9, 1]),
+        'max_leaf_nodes': trial.suggest_int('max_leaf_nodes', 10, 1000),
+        'class_weight': trial.suggest_categorical('class_weight', [None, 'balanced', 'balanced_subsample']),
         'bootstrap': trial.suggest_categorical('bootstrap', [True, False])
     }
 
@@ -40,7 +43,7 @@ def objective(trial):
     return score
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=30)
+study.optimize(objective, n_trials=50)
 
 # Best model, parameters and F1
 best_params = study.best_trial.params

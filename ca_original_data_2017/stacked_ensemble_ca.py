@@ -11,11 +11,11 @@ from xgboost import XGBClassifier
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
-from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.check_robustness import compute_rgr_values, rgr_all, rgr_single
 from safeai_files.core import rga
-from ca_original_data_2017.data_processing_ca import data_lending_ca_clean
 
 # Data separation
+data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_resampled_ca.csv")
 x = data_lending_ca_clean.drop(columns=['action_taken'])
 y = data_lending_ca_clean['action_taken']
 
@@ -32,8 +32,8 @@ with open(os.path.join("../saved_data", "best_xgb_params_ca.json"), "r", encodin
     best_xgb_params = json.load(file_xgb)
 
 # Models
-rf_clf = RandomForestClassifier(**best_rf_params, random_state=42)
-xgb_clf = XGBClassifier(**best_xgb_params, objective='binary:logistic', eval_metric='logloss', random_state=42)
+rf_clf = RandomForestClassifier(**best_rf_params, random_state=42, n_jobs=-1)
+xgb_clf = XGBClassifier(**best_xgb_params, objective='binary:logistic', eval_metric='logloss')
 lr_clf = LogisticRegression()
 
 # Stacking Classifier with Logistic Regression as meta-estimator
@@ -52,7 +52,7 @@ y_prob = stacking_clf.predict_proba(x_test)[:, 1]
 #AUC
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
-print(roc_auc)
+print("AUC:\n", roc_auc)
 
 # Partial AUC
 fpr_threshold = 0.3
@@ -99,10 +99,26 @@ rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-print(compute_rge_values(x_train, x_test, y_prob, stacking_clf, ["loan_purpose"]))
+explain = ["loan_purpose", "lien_status", "loan_type", "applicant_income_000s", "loan_amount_000s"]
+print(compute_rge_values(x_train, x_test, y_prob, stacking_clf, explain))
 
 # Fairness
-print(compute_rga_parity(x_train, x_test, y_test, y_prob, stacking_clf, "applicant_race_1"))
+gender = compute_rga_parity(x_train, x_test, y_test, y_prob, stacking_clf, "applicant_sex")
+print("Gender:\n", gender)
+race = compute_rga_parity(x_train, x_test, y_test, y_prob, stacking_clf, "applicant_race_1")
+print("Race:\n", race)
 
 # Robustness
-print(compute_rgr_values(x_test, y_prob, stacking_clf, list(x_test.columns)))
+print(compute_rgr_values(x_test, y_prob, stacking_clf, list(x_test.columns), 0.3))
+print(rgr_single(x_test, y_prob, stacking_clf, "loan_purpose", 0.2))
+
+thresholds = np.arange(0.05, 0.55, 0.05)
+results = [rgr_all(x_test, y_prob, stacking_clf, t) for t in thresholds]
+plt.figure(figsize=(8, 5))
+plt.plot(thresholds, results, marker='o', linestyle='-')
+plt.title('Stacked Ensemble(California) RGR')
+plt.xlabel('Perturbation')
+plt.ylabel('RGR')
+plt.grid(True)
+plt.tight_layout()
+plt.show()

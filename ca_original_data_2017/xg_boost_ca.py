@@ -34,7 +34,8 @@ def objective(trial):
         'gamma': trial.suggest_float('gamma', 0, 5),
         'reg_alpha': trial.suggest_float('reg_alpha', 0, 5),
         'reg_lambda': trial.suggest_float('reg_lambda', 0, 5),
-        'random_state': 42
+        'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+        'random_state': 42,
     }
 
     xgb_model = xgb.XGBClassifier(**params, objective='binary:logistic', eval_metric='logloss')
@@ -42,7 +43,7 @@ def objective(trial):
     return score
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=30)
+study.optimize(objective, n_trials=100)
 
 # Best model, parameters and F1
 best_params = study.best_trial.params

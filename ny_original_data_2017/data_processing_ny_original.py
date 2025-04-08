@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Load data and check some general information
-data_lending_ny = pd.read_csv(r"C:\Users\koles\Desktop\Master Thesis\hmda_2017_ny_all-records_labels.csv", low_memory=False)
+data_lending_ny = pd.read_csv(r"C:\Users\koles\Desktop\Master Thesis R project\hmda_2017_ny_all-records_labels.csv", low_memory=False)
 print(data_lending_ny.shape)
 print(data_lending_ny.columns)
 print(data_lending_ny['action_taken_name'].value_counts())

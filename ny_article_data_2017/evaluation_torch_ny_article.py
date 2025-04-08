@@ -8,7 +8,7 @@ import torch
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
-from safeai_files.check_robustness import compute_rgr_values
+from safeai_files.check_robustness import compute_rgr_values, rgr_all, rgr_single
 from safeai_files.core import rga
 from torch_for_credits.torch_model import CreditModel
 
@@ -120,13 +120,31 @@ def evaluate_model_ny_article():
     print(f"RGA value is equal to {rga_class}")
 
     # Explainability
-    print(compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, ["applicant_sex_name"]))
+    explain = ["loan_purpose", "lien_status", "loan_type", "applicant_income_000s", "loan_amount_000s"]
+    print(compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, explain))
 
     # Fairness
-    print(compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model, "applicant_race_1"))
+    gender = compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model,
+                                "applicant_sex_name")
+    print("Gender:\n", gender)
+    race = compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model,
+                              "applicant_race_1")
+    print("Race:\n", race)
 
     # Robustness
-    print(compute_rgr_values(x_test_scaled_names, y_pred_prob, best_model, list(x_test_scaled_names.columns)))
+    print(compute_rgr_values(x_test_scaled_names, y_pred_prob, best_model, list(x_test_scaled_names.columns), 0.3))
+    print(rgr_single(x_test_scaled_names, y_pred_prob, best_model, "loan_purpose", 0.2))
+
+    thresholds = np.arange(0.05, 0.55, 0.05)
+    results = [rgr_all(x_test_scaled_names, y_pred_prob, best_model, t) for t in thresholds]
+    plt.figure(figsize=(8, 5))
+    plt.plot(thresholds, results, marker='o', linestyle='-')
+    plt.title('NN(New York Article) RGR')
+    plt.xlabel('Perturbation')
+    plt.ylabel('RGR')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     evaluate_model_ny_article()

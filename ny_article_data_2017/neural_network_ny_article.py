@@ -47,10 +47,10 @@ x_test_tensor = torch.tensor(x_test_scaled, dtype=torch.float32)
 y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1)
 
 # Hyperparameters tuning
-batch_sizes = [256] #64,128
+batch_sizes = [64, 128, 256]
 max_lr = 0.01
-hidden_layer_sizes = [64] #(32,16), (64, 32, 16), (128, 64, 32)
-dropout_rates = [0.2] #0.3
+hidden_layer_sizes = [64, (32,16), (64, 32, 16), (128, 64, 32)]
+dropout_rates = [0.2, 0.3]
 
 # Preparation
 k_folds = 3
@@ -96,7 +96,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=50)
 
         # Early Stopping Setup
-        patience = 5
+        patience = 8
         best_val_loss = float('inf')
         counter = 0
 

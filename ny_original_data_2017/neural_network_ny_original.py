@@ -186,10 +186,10 @@ print(f"Best model saved at {model_dir}")
 # Tensors
 tensor_path = os.path.join("../saved_data", "full_data_tensors_ny_original.pth")
 torch.save({
-    "x_train_tensor": x_train_tensor,
-    "y_train_tensor": y_train_tensor,
-    "x_test_tensor": x_test_tensor,
-    "y_test_tensor": y_test_tensor,
+    "x_train_tensor_ny_original": x_train_tensor,
+    "y_train_tensor_ny_original": y_train_tensor,
+    "x_test_tensor_ny_original": x_test_tensor,
+    "y_test_tensor_ny_original": y_test_tensor,
 }, tensor_path)
 
 # Best parameters

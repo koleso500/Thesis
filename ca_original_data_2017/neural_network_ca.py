@@ -96,7 +96,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=50)
 
         # Early Stopping Setup
-        patience = 5
+        patience = 8
         best_val_loss = float('inf')
         counter = 0
 
@@ -186,10 +186,10 @@ print(f"Best model saved at {model_dir}")
 # Tensors
 tensor_path = os.path.join("../saved_data", "full_data_tensors_ca.pth")
 torch.save({
-    "x_train_tensor": x_train_tensor,
-    "y_train_tensor": y_train_tensor,
-    "x_test_tensor": x_test_tensor,
-    "y_test_tensor": y_test_tensor,
+    "x_train_tensor_ca": x_train_tensor,
+    "y_train_tensor_ca": y_train_tensor,
+    "x_test_tensor_ca": x_test_tensor,
+    "y_test_tensor_ca": y_test_tensor,
 }, tensor_path)
 
 # Best parameters

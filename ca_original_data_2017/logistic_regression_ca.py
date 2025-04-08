@@ -72,9 +72,9 @@ print(f'Best F1 Score: {best_f1["f1_score"]:.4f} at Threshold: {best_threshold:.
 y_pred_best = np.where(y_prob >= best_threshold, 1, 0)
 
 # Evaluate Model Performance
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Accuracy:", accuracy_score(y_test, y_pred_best))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_best))
+print("Classification Report:\n", classification_report(y_test, y_pred_best))
 
 # Integrating safeai
 # Accuracy
@@ -82,13 +82,26 @@ rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-print(compute_rge_values(x_train_scaled, x_test_scaled, y_prob, log_model, list(x_test_scaled.columns)))
+explain = ["loan_purpose", "lien_status", "loan_type", "applicant_income_000s", "loan_amount_000s"]
+print(compute_rge_values(x_train_scaled, x_test_scaled, y_prob, log_model, explain))
 
 # Fairness
-print(compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_race_1"))
-print(compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_sex"))
+gender = compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_sex")
+print("Gender:\n", gender)
+race = compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_race_1")
+print("Race:\n", race)
 
 # Robustness
-print(compute_rgr_values(x_test_scaled, y_prob, log_model, list(x_test_scaled.columns), 0.2))
-print(rgr_all(x_test_scaled, y_prob, log_model, 0.2))
+print(compute_rgr_values(x_test_scaled, y_prob, log_model, list(x_test_scaled.columns), 0.3))
 print(rgr_single(x_test_scaled, y_prob, log_model, "loan_purpose", 0.2))
+
+thresholds = np.arange(0.05, 0.55, 0.05)
+results = [rgr_all(x_test_scaled, y_prob, log_model, t) for t in thresholds]
+plt.figure(figsize=(8, 5))
+plt.plot(thresholds, results, marker='o', linestyle='-')
+plt.title('Logistic(California) RGR')
+plt.xlabel('Perturbation')
+plt.ylabel('RGR')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
