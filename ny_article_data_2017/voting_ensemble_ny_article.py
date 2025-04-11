@@ -47,6 +47,38 @@ voting_clf.fit(x_train, y_train)
 y_pred = voting_clf.predict(x_test)
 y_prob = voting_clf.predict_proba(x_test)[:, 1]
 
+explain = x_train.columns.tolist()
+single_rge = compute_rge_values(x_train, x_test, y_prob, voting_clf, explain)
+print(single_rge)
+single_rge = single_rge.index.tolist()
+
+# Get all group values of RGE
+step_rges = []
+for k in range(0, len(single_rge) + 1):
+    top_k_vars = single_rge[:k]
+    rge_k = compute_rge_values(x_train, x_test, y_prob, voting_clf, top_k_vars, group=True)
+    step_rges.append(rge_k.iloc[0, 0])
+
+# Normalize
+x_rge = np.linspace(0, 1, len(step_rges))
+y_rge = np.array(step_rges)
+y_rge /= y_rge.max()
+
+# Compute RGE AUC
+rge_score = auc(x_rge, y_rge)
+
+# Plot
+plt.figure(figsize=(6, 4))
+plt.plot(x_rge, y_rge, marker='o')
+plt.xlabel("Fraction of Top Variables Removed")
+plt.ylabel("RGE")
+plt.title("Voting Classifier RGE Curve (New York Article)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+print(f"RGE AUC: {rge_score:.4f}")
+
 #AUC
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
@@ -97,8 +129,39 @@ rga_class = rga(y_test, y_prob)
 print(f"RGA value is equal to {rga_class}")
 
 # Explainability
-explain = ["loan_purpose", "lien_status", "loan_type", "applicant_income_000s", "loan_amount_000s"]
-print(compute_rge_values(x_train, x_test, y_prob, voting_clf, explain))
+# RGE AUC
+# Get values of RGE for each variable
+explain = x_train.columns.tolist()
+single_rge = compute_rge_values(x_train, x_test, y_prob, voting_clf, explain)
+print(single_rge)
+single_rge = single_rge.index.tolist()
+
+# Get all group values of RGE
+step_rges = []
+for k in range(0, len(single_rge) + 1):
+    top_k_vars = single_rge[:k]
+    rge_k = compute_rge_values(x_train, x_test, y_prob, voting_clf, top_k_vars, group=True)
+    step_rges.append(rge_k.iloc[0, 0])
+
+# Normalize
+x_rge = np.linspace(0, 1, len(step_rges))
+y_rge = np.array(step_rges)
+y_rge /= y_rge.max()
+
+# Compute RGE AUC
+rge_score = auc(x_rge, y_rge)
+
+# Plot
+plt.figure(figsize=(6, 4))
+plt.plot(x_rge, y_rge, marker='o')
+plt.xlabel("Fraction of Top Variables Removed")
+plt.ylabel("RGE")
+plt.title("Voting Classifier RGE Curve (New York Article)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+print(f"RGE AUC: {rge_score:.4f}")
 
 # Fairness
 gender = compute_rga_parity(x_train, x_test, y_test, y_prob, voting_clf, "applicant_sex_name")
@@ -110,13 +173,18 @@ print("Race:\n", race)
 print(compute_rgr_values(x_test, y_prob, voting_clf, list(x_test.columns), 0.3))
 print(rgr_single(x_test, y_prob, voting_clf, "loan_purpose", 0.2))
 
-thresholds = np.arange(0.05, 0.55, 0.05)
+# RGR AUC
+thresholds = np.arange(0, 0.51, 0.01)
 results = [rgr_all(x_test, y_prob, voting_clf, t) for t in thresholds]
+normalized_thresholds = thresholds / 0.5
+
 plt.figure(figsize=(8, 5))
-plt.plot(thresholds, results, marker='o', linestyle='-')
-plt.title('Stacked Ensemble(New York Article) RGR')
-plt.xlabel('Perturbation')
+plt.plot(normalized_thresholds, results, linestyle='-')
+plt.title('Voting Classifier RGR Curve (New York Article)')
+plt.xlabel('Normalized Perturbation')
 plt.ylabel('RGR')
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+rgr_auc = auc(normalized_thresholds, results)
+print(f"RGR AUC: {rgr_auc:.4f}")
