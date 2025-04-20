@@ -57,6 +57,7 @@ data_lending_ny_clean.to_csv(os.path.join("../saved_data", "data_lending_clean_n
 correlation_matrix = data_lending_ny_clean.corr()
 print(correlation_matrix['action_taken'])
 
-# Create folder for saved data
+# Create folder for saved data and plots
 save_dir = "../saved_data"
 os.makedirs(save_dir, exist_ok=True)
+os.makedirs("plots", exist_ok=True)

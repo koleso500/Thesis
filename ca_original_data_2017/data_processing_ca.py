@@ -108,6 +108,7 @@ axes[1].set_ylabel("Principal Component 2")
 plt.tight_layout()
 plt.show()
 
-# Create folder for saved data
+# Create folder for saved data and plots
 save_dir = "../saved_data"
 os.makedirs(save_dir, exist_ok=True)
+os.makedirs("plots", exist_ok=True)

@@ -10,16 +10,16 @@ from xgboost import XGBClassifier
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_fairness import compute_rga_parity
-from safeai_files.check_robustness import compute_rgr_values, rgr_all, rgr_single
+from safeai_files.check_robustness import rgr_all
 from safeai_files.core import rga
 
 # Data Separation
 data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_resampled_ca.csv")
-x = data_lending_ca_clean.drop(columns=['action_taken'])
+predictors = data_lending_ca_clean.drop(columns=['action_taken'])
 y = data_lending_ca_clean['action_taken']
 
 # Splitting into 80% training and 20% testing
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=15)
+x_train, x_test, y_train, y_test = train_test_split(predictors, y, test_size=0.2, random_state=15)
 print("Training set shape:", x_train.shape)
 print("Testing set shape:", x_test.shape)
 
@@ -35,10 +35,7 @@ rf_clf = RandomForestClassifier(**best_rf_params, random_state=42, n_jobs=-1)
 xgb_clf = XGBClassifier(**best_xgb_params, objective='binary:logistic', eval_metric='logloss')
 
 # Voting Classifier with Soft Voting
-voting_clf = VotingClassifier(
-    estimators=[('rf', rf_clf), ('xgb', xgb_clf)],
-    voting='soft'
-)
+voting_clf = VotingClassifier(estimators=[('rf', rf_clf), ('xgb', xgb_clf)], voting='soft')
 
 # Train
 voting_clf.fit(x_train, y_train)
@@ -68,7 +65,8 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic Curve')
 plt.legend(loc='lower right')
-plt.show()
+plt.savefig("plots/VEM_ROC_Curve_ca.png", dpi=300)
+plt.close()
 
 # DataFrame with thresholds, FPR, TPR, and F1 Score
 roc_data = pd.DataFrame({
@@ -98,61 +96,70 @@ print(f"RGA value is equal to {rga_class}")
 
 # Explainability
 # RGE AUC
-# Get values of RGE for each variable
 explain = x_train.columns.tolist()
-single_rge = compute_rge_values(x_train, x_test, y_prob, voting_clf, explain)
-print(single_rge)
-single_rge = single_rge.index.tolist()
-
-# Get all group values of RGE
+remaining_vars = explain.copy()
+removed_vars = []
 step_rges = []
-for k in range(0, len(single_rge) + 1):
-    top_k_vars = single_rge[:k]
-    rge_k = compute_rge_values(x_train, x_test, y_prob, voting_clf, top_k_vars, group=True)
-    step_rges.append(rge_k.iloc[0, 0])
+
+for k in range(0, len(explain) + 1):
+    if k == 0:
+        step_rges.append(0.0)
+        continue
+
+    candidate_rges = []
+    for var in remaining_vars:
+        current_vars = removed_vars + [var]
+        rge_k = compute_rge_values(x_train, x_test, y_prob, voting_clf, current_vars, group=True)
+        candidate_rges.append((var, rge_k.iloc[0, 0]))
+
+    best_var, best_rge = max(candidate_rges, key=lambda x: x[1])
+    removed_vars.append(best_var)
+    remaining_vars.remove(best_var)
+    step_rges.append(best_rge)
 
 # Normalize
 x_rge = np.linspace(0, 1, len(step_rges))
 y_rge = np.array(step_rges)
 y_rge /= y_rge.max()
-
-# Compute RGE AUC
-rge_score = auc(x_rge, y_rge)
+rge_auc = auc(x_rge, y_rge)
+print(f"RGE AUC: {rge_auc:.4f}")
 
 # Plot
 plt.figure(figsize=(6, 4))
-plt.plot(x_rge, y_rge, marker='o')
-plt.xlabel("Fraction of Top Variables Removed")
-plt.ylabel("RGE")
-plt.title("Voting Classifier RGE Curve (California)")
+plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (RGE AUC = {rge_auc:.4f})")
+random_baseline = float(y_rge[-1])
+plt.axhline(random_baseline, color='red', linestyle='--', label="Random Classifier (RGE = 0.5)")
+plt.xlabel("Fraction of Variables Removed")
+plt.ylabel("Normalized RGE")
+plt.title("Voting Ensemble Model RGE Curve (California)")
+plt.legend()
 plt.grid(True)
-plt.tight_layout()
-plt.show()
+plt.savefig("plots/VEM_RGE_ca.png", dpi=300)
+plt.close()
 
-print(f"RGE AUC: {rge_score:.4f}")
+# Robustness
+# RGR AUC
+thresholds = np.arange(0, 0.51, 0.01)
+results = [rgr_all(x_test, y_prob, voting_clf, t) for t in thresholds]
+normalized_thresholds = thresholds / 0.5
+rgr_auc = auc(normalized_thresholds, results)
+print(f"RGR AUC: {rgr_auc:.4f}")
+
+# Plot
+plt.figure(figsize=(6, 4))
+plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (RGR AUC = {rgr_auc:.4f})")
+plt.title('Voting Ensemble Model RGR Curve (California)')
+plt.axhline(0.5, color='red', linestyle='--', label="Random Classifier (RGR = 0.5)")
+plt.xlabel('Normalized Perturbation')
+plt.ylabel('RGR')
+plt.legend()
+plt.xlim([0, 1])
+plt.grid(True)
+plt.savefig("plots/VEM_RGR_ca.png", dpi=300)
+plt.close()
 
 # Fairness
 gender = compute_rga_parity(x_train, x_test, y_test, y_prob, voting_clf, "applicant_sex")
 print("Gender:\n", gender)
 race = compute_rga_parity(x_train, x_test, y_test, y_prob, voting_clf, "applicant_race_1")
 print("Race:\n", race)
-
-# Robustness
-print(compute_rgr_values(x_test, y_prob, voting_clf, list(x_test.columns), 0.3))
-print(rgr_single(x_test, y_prob, voting_clf, "loan_purpose", 0.2))
-
-# RGR AUC
-thresholds = np.arange(0, 0.51, 0.01)
-results = [rgr_all(x_test, y_prob, voting_clf, t) for t in thresholds]
-normalized_thresholds = thresholds / 0.5
-
-plt.figure(figsize=(8, 5))
-plt.plot(normalized_thresholds, results, linestyle='-')
-plt.title('Voting Classifier RGR Curve (California)')
-plt.xlabel('Normalized Perturbation')
-plt.ylabel('RGR')
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-rgr_auc = auc(normalized_thresholds, results)
-print(f"RGR AUC: {rgr_auc:.4f}")
