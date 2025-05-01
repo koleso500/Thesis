@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, train_test_split
 
 # Data separation
-data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_resampled_ca.csv")
+data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
 x = data_lending_ca_clean.drop(columns=['action_taken'])
 y = data_lending_ca_clean['action_taken']
 
@@ -34,6 +34,7 @@ def objective(trial):
         'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                                                    0.8, 0.9, 1]),
         'max_leaf_nodes': trial.suggest_int('max_leaf_nodes', 10, 1000),
+        'class_weight': trial.suggest_categorical('class_weight', [None, 'balanced', 'balanced_subsample']),
         'bootstrap': trial.suggest_categorical('bootstrap', [True, False])
     }
 

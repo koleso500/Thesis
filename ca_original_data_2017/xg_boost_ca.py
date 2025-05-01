@@ -8,7 +8,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 import xgboost as xgb
 
 # Data separation
-data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_resampled_ca.csv")
+data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
 x = data_lending_ca_clean.drop(columns=['action_taken'])
 y = data_lending_ca_clean['action_taken']
 
@@ -35,6 +35,8 @@ def objective(trial):
         'reg_alpha': trial.suggest_float('reg_alpha', 0, 5),
         'reg_lambda': trial.suggest_float('reg_lambda', 0, 5),
         'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+        'max_delta_step': trial.suggest_int('max_delta_step', 0, 10),
+        'scale_pos_weight': trial.suggest_float('scale_pos_weight', 0.5, 10),
         'random_state': 42,
     }
 
@@ -43,7 +45,7 @@ def objective(trial):
     return score
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=50)
 
 # Best model, parameters and F1
 best_params = study.best_trial.params

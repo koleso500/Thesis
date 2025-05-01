@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from safeai_files.check_explainability import compute_rge_values
-from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import rgr_all
 from safeai_files.core import rga
 
@@ -108,17 +107,16 @@ for k in range(0, len(explain) + 1):
 # Normalize
 x_rge = np.linspace(0, 1, len(step_rges))
 y_rge = np.array(step_rges)
-y_rge /= y_rge.max()
 rge_auc = auc(x_rge, y_rge)
-print(f"RGE AUC: {rge_auc:.4f}")
+print(f"AURGE: {rge_auc:.4f}")
 
 # Plot
 plt.figure(figsize=(6, 4))
-plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (RGE AUC = {rge_auc:.4f})")
+plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
 random_baseline = float(y_rge[-1])
 plt.axhline(random_baseline, color='red', linestyle='--', label="Random Classifier (RGE = 0.5)")
 plt.xlabel("Fraction of Variables Removed")
-plt.ylabel("Normalized RGE")
+plt.ylabel("RGE")
 plt.title("Logistic Regression RGE Curve (New York Original)")
 plt.legend()
 plt.grid(True)
@@ -131,11 +129,11 @@ thresholds = np.arange(0, 0.51, 0.01)
 results = [rgr_all(x_test_scaled, y_prob, log_model, t) for t in thresholds]
 normalized_thresholds = thresholds / 0.5
 rgr_auc = auc(normalized_thresholds, results)
-print(f"RGR AUC: {rgr_auc:.4f}")
+print(f"AURGR: {rgr_auc:.4f}")
 
 # Plot
 plt.figure(figsize=(6, 4))
-plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (RGR AUC = {rgr_auc:.4f})")
+plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
 plt.title('Logistic Regression RGR Curve (New York Original)')
 plt.axhline(0.5, color='red', linestyle='--', label="Random Classifier (RGR = 0.5)")
 plt.xlabel('Normalized Perturbation')
@@ -147,7 +145,5 @@ plt.savefig("plots/LR_RGR_ny_original.png", dpi=300)
 plt.close()
 
 # Fairness
-gender = compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_sex")
-print("Gender:\n", gender)
-race = compute_rga_parity(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "applicant_race_1")
-print("Race:\n", race)
+fair = compute_rge_values(x_train_scaled, x_test_scaled, y_prob, log_model, ["applicant_sex", "applicant_race_1"])
+print(fair)

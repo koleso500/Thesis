@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import OneCycleLR
 from sklearn.metrics import f1_score
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from torch_for_credits.torch_model import CreditModel
@@ -48,18 +48,19 @@ y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1)
 
 # Hyperparameters tuning
 batch_sizes = [64, 128, 256]
-max_lr = 0.01
+max_lr = 0.001
 hidden_layer_sizes = [64, (32,16), (64, 32, 16), (128, 64, 32)]
 dropout_rates = [0.2, 0.3]
 
 # Preparation
-k_folds = 3
-kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
+k_folds = 2
+kf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
 best_f1 = 0
 best_threshold = 0
 best_params = None
 best_model_path = None
-loss_values = []
+best_train_losses = []
+best_val_losses = []
 max_fold_f1 = 0
 model = None
 model_dir = "../saved_models"
@@ -73,7 +74,7 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
     fold_accuracies = []
     fold_f1_scores = []
 
-    for fold, (train_idx, val_idx) in enumerate(kf.split(x_train_tensor)):
+    for fold, (train_idx, val_idx) in enumerate(kf.split(x_train_tensor, y_train_tensor)):
 
         # Slicing
         train_idx_tensor = torch.tensor(train_idx, dtype=torch.long, device="cpu")
@@ -93,14 +94,17 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
         optimizer = optim.Adam(model.parameters())
 
         # 1Cycle Learning Rate
-        scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=50)
+        scheduler = OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_loader), epochs=100,
+                               pct_start=0.3, anneal_strategy='cos')
 
         # Early Stopping Setup
-        patience = 5
+        patience = 10
         best_val_loss = float('inf')
         counter = 0
+        fold_train_losses = []
+        fold_val_losses = []
 
-        for epoch in range(50):  # Train for up to 50 epochs
+        for epoch in range(100):  # Train for up to 100 epochs
             model.train()
             epoch_loss = 0
             first_batch = True
@@ -120,13 +124,15 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
                 epoch_loss += loss.item()
 
             avg_train_loss = epoch_loss / len(train_loader)
-            loss_values.append(avg_train_loss)
 
             # Validation
             model.eval()
             with torch.no_grad():
                 val_outputs = model(x_val_fold_tensor)
                 val_loss = criterion(val_outputs, y_val_fold_tensor).item()
+
+            fold_train_losses.append(avg_train_loss)
+            fold_val_losses.append(val_loss)
 
             # Early Stopping Logic
             if val_loss < best_val_loss:
@@ -170,6 +176,8 @@ for batch_size, layers, dropout_rate in itertools.product(batch_sizes, hidden_la
                 best_f1 = max_fold_f1
                 best_params = (batch_size, max_lr, layers, dropout_rate)
                 best_model_probabilities = y_val_pred_prob
+                best_train_losses = fold_train_losses.copy()
+                best_val_losses = fold_val_losses.copy()
 
                 # Save the best model
                 best_torch_model_path = os.path.join(model_dir, "best_torch_model_ny_original.pth")
@@ -204,4 +212,5 @@ x_train_scaled_names.to_csv(os.path.join("../saved_data", "x_train_scaled_names_
 x_test_scaled_names.to_csv(os.path.join("../saved_data", "x_test_scaled_names_ny_original.csv"), index=False)
 np.save(os.path.join("../saved_data", "y_train_ny_original.npy"), y_train)
 np.save(os.path.join("../saved_data", "y_test_ny_original.npy"), y_test)
-np.save(os.path.join("../saved_data", "loss_values_ny_original.npy"), np.array(loss_values))
+np.save("../saved_data/best_train_losses_ny_original.npy", np.array(best_train_losses))
+np.save("../saved_data/best_val_losses_ny_original.npy", np.array(best_val_losses))

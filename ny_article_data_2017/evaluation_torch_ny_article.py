@@ -7,7 +7,6 @@ from sklearn.metrics import accuracy_score, auc, classification_report, confusio
 import torch
 
 from safeai_files.check_explainability import compute_rge_values
-from safeai_files.check_fairness import compute_rga_parity
 from safeai_files.check_robustness import rgr_all
 from safeai_files.core import rga
 from torch_for_credits.torch_model import CreditModel
@@ -35,7 +34,8 @@ y_train = np.load(os.path.join(save_dir, "y_train_ny_article.npy"))
 y_test = np.load(os.path.join(save_dir, "y_test_ny_article.npy"))
 
 # Load loss values
-loss_values = np.load(os.path.join(save_dir, "loss_values_ny_article.npy"))
+train_losses = np.load("../saved_data/best_train_losses_ny_article.npy")
+val_losses = np.load("../saved_data/best_val_losses_ny_article.npy")
 
 def evaluate_model_ny_article():
     # Load the best model
@@ -106,6 +106,19 @@ def evaluate_model_ny_article():
     plt.savefig("plots/NN_ROC_Curve_ny_article.png", dpi=300)
     plt.close()
 
+    # Training and Validation loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label="Training Loss", linewidth=2)
+    plt.plot(val_losses, label="Validation Loss", linewidth=2)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training vs Validation Loss (Best Fold)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("plots/NN_Loss_ny_article.png", dpi=300)
+    plt.close()
+
     # Integrating safeai
     # Accuracy
     rga_class = rga(y_test, y_pred_prob)
@@ -137,17 +150,16 @@ def evaluate_model_ny_article():
     # Normalize
     x_rge = np.linspace(0, 1, len(step_rges))
     y_rge = np.array(step_rges)
-    y_rge /= y_rge.max()
     rge_auc = auc(x_rge, y_rge)
-    print(f"RGE AUC: {rge_auc:.4f}")
+    print(f"AURGE: {rge_auc:.4f}")
 
     # Plot
     plt.figure(figsize=(6, 4))
-    plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (RGE AUC = {rge_auc:.4f})")
+    plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
     random_baseline = float(y_rge[-1])
     plt.axhline(random_baseline, color='red', linestyle='--', label="Random Classifier (RGE = 0.5)")
     plt.xlabel("Fraction of Variables Removed")
-    plt.ylabel("Normalized RGE")
+    plt.ylabel("RGE")
     plt.title("Neural Network RGE Curve (New York Article)")
     plt.legend()
     plt.grid(True)
@@ -160,11 +172,11 @@ def evaluate_model_ny_article():
     results = [rgr_all(x_test_scaled_names, y_pred_prob, best_model, t) for t in thresholds]
     normalized_thresholds = thresholds / 0.5
     rgr_auc = auc(normalized_thresholds, results)
-    print(f"RGR AUC: {rgr_auc:.4f}")
+    print(f"AURGR: {rgr_auc:.4f}")
 
     # Plot
     plt.figure(figsize=(6, 4))
-    plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (RGR AUC = {rgr_auc:.4f})")
+    plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
     plt.title('Neural Network RGR Curve (New York Article)')
     plt.axhline(0.5, color='red', linestyle='--', label="Random Classifier (RGR = 0.5)")
     plt.xlabel('Normalized Perturbation')
@@ -176,10 +188,8 @@ def evaluate_model_ny_article():
     plt.close()
 
     # Fairness
-    gender = compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model, "applicant_sex_name")
-    print("Gender:\n", gender)
-    race = compute_rga_parity(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model, "applicant_race_1")
-    print("Race:\n", race)
+    fair = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model,["applicant_sex_name", "applicant_race_1"])
+    print(fair)
 
 if __name__ == "__main__":
     evaluate_model_ny_article()
