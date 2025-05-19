@@ -1,4 +1,5 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
+import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.base import BaseEstimator, is_classifier, is_regressor
 import torch
@@ -167,3 +168,29 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
         raise ValueError("The model type is not recognized for prediction")
 
     return yhat
+
+
+def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='Steps', ylabel='Values'):
+    """
+    Plot RGA/RGE/RGR curves for a given model using a template.
+
+    Parameters:
+    - x: np.ndarray or list of x-axis values
+    - curves: list of np.ndarrays (e.g., [rga, rge, rgr])
+    - model_name: str, e.g., "RF", "XGB"
+    - prefix: str, e.g., "Curve" or "Difference Random"
+    - title: str, plot title
+    - xlabel, ylabel: axis labels
+    """
+    labels_base = ["RGA", "RGE", "RGR"]
+    labels = [f"{label} {prefix} {model_name}" for label in labels_base]
+
+    plt.figure(figsize=(6, 4))
+    for curve, label in zip(curves, labels):
+        plt.plot(x, curve, linestyle='-', label=label)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.xlim([0, 1])
+    plt.grid(True)

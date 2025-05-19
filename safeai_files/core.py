@@ -59,7 +59,10 @@ def rga(y: list, yhat: list):
         inc = np.sum(i * sorted_y)
 
         # Compute the RGA
-        result = (conc - dec) / (inc - dec)
+        denom = inc - dec
+        if denom == 0:
+            return 1.0
+        result = (conc - dec) / denom
 
         return result
 
@@ -82,8 +85,8 @@ def partial_rga_with_curves(y: list, yhat: list, lower=0.0, upper=1.0, plot=True
         Whether to plot Lorenz, Dual Lorenz, and Concordance curves. Default is True.
     Returns
     -------
-    rga_score : float
-        The RGA value.
+    partial_rga_contribution : float
+        The Partial RGA value.
     """
     # Convert inputs to DataFrames and concatenate them
     y, yhat = convert_to_dataframe(y, yhat)
