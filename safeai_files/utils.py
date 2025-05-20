@@ -1,5 +1,6 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, is_classifier, is_regressor
 import torch
@@ -175,12 +176,13 @@ def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='S
     Plot RGA/RGE/RGR curves for a given model using a template.
 
     Parameters:
-    - x: np.ndarray or list of x-axis values
-    - curves: list of np.ndarrays (e.g., [rga, rge, rgr])
-    - model_name: str, e.g., "RF", "XGB"
-    - prefix: str, e.g., "Curve" or "Difference Random"
-    - title: str, plot title
-    - xlabel, ylabel: axis labels
+    x (np.ndarray or list): X-axis values.
+    curves (list of np.ndarray): List of curves to plot (e.g., [rga, rge, rgr])
+    model_name (str): Name of the model (e.g., "RF", "XGB") used for labeling
+    prefix (str): Prefix for legend labels (e.g., "Curve", "Difference Random")
+    title (str): Title of the plot
+    xlabel (str): Label for the x-axis
+    ylabel (str): Label for the y-axis
     """
     labels_base = ["RGA", "RGE", "RGR"]
     labels = [f"{label} {prefix} {model_name}" for label in labels_base]
@@ -194,3 +196,40 @@ def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='S
     plt.legend()
     plt.xlim([0, 1])
     plt.grid(True)
+
+
+def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_label="Model", bins=60):
+    """
+    Plot a histogram for the given metric values with normalized counts.
+
+    Parameters:
+        metric_values (np.ndarray): Computed metric values
+        print_label (str): Label to print for the mean volume
+        xlabel (str): Label for the x-axis of the plot
+        title (str): Title for the histogram plot
+        bar_label (str): Label in the legend
+        bins (int): Number of bins for the histogram
+    """
+    # Flatten and compute mean
+    flat_vals = metric_values.flatten()
+    total_sum = np.sum(flat_vals)
+    num_elements = flat_vals.size
+    normalized_volume = total_sum / num_elements
+
+    # Print mean volume
+    print(f"{print_label}: {normalized_volume}")
+
+    # Histogram
+    counts, bin_edges = np.histogram(flat_vals, bins=bins)
+    max_count = counts.max()
+    counts_norm = counts / max_count
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
+    plt.xlabel(xlabel)
+    plt.ylabel('Normalized Counts')
+    plt.title(title)
+    plt.grid(True)
+    plt.legend()
