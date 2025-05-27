@@ -217,7 +217,7 @@ def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_labe
     normalized_volume = total_sum / num_elements
 
     # Print mean volume
-    print(f"{print_label}: {normalized_volume}")
+    print(f"{print_label}: {normalized_volume:.5f}")
 
     # Histogram
     counts, bin_edges = np.histogram(flat_vals, bins=bins)
@@ -228,6 +228,43 @@ def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_labe
     # Plot
     plt.figure(figsize=(10, 6))
     plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
+    plt.xlabel(xlabel)
+    plt.ylabel('Normalized Counts')
+    plt.title(title)
+    plt.grid(True)
+    plt.legend()
+
+def plot_metric_distribution_diff(metric_values, print_label, xlabel, title, bar_label="Model", bins=60):
+    """
+    Plot a histogram for the given metric differences values with normalized counts.
+
+    Parameters:
+        metric_values (np.ndarray): Computed metric values
+        print_label (str): Label to print for the mean volume
+        xlabel (str): Label for the x-axis of the plot
+        title (str): Title for the histogram plot
+        bar_label (str): Label in the legend
+        bins (int): Number of bins for the histogram
+    """
+    # Flatten and compute mean
+    flat_vals = metric_values.flatten()
+    total_sum = np.sum(flat_vals)
+    num_elements = flat_vals.size
+    normalized_volume = total_sum / num_elements
+
+    # Print mean volume
+    print(f"{print_label}: {normalized_volume:.5f}")
+
+    # Histogram
+    counts, bin_edges = np.histogram(flat_vals, bins=bins)
+    max_count = counts.max()
+    counts_norm = counts / max_count
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label, color='green')
+    plt.axvline(0, color='red', linestyle='--', label='No Difference')
     plt.xlabel(xlabel)
     plt.ylabel('Normalized Counts')
     plt.title(title)

@@ -101,23 +101,24 @@ print(f"RGA value is equal to {rga_class}")
 # RGE AUC
 explain = x_train.columns.tolist()
 remaining_vars = explain.copy()
+removed_vars = []
 step_rges = []
 
 for k in range(0, len(explain) + 1):
     if k == 0:
-        rge_k = compute_rge_values(x_train, x_test, y_prob, stacking_clf, remaining_vars, group=True)
-        step_rges.append(rge_k.iloc[0, 0])
+        step_rges.append(0.0)
         continue
 
     candidate_rges = []
     for var in remaining_vars:
-        current_vars = [v for v in remaining_vars if v != var]
+        current_vars = removed_vars + [var]
         rge_k = compute_rge_values(x_train, x_test, y_prob, stacking_clf, current_vars, group=True)
         candidate_rges.append((var, rge_k.iloc[0, 0]))
 
-    worst_var, worst_rge = max(candidate_rges, key=lambda x: x[1])
-    remaining_vars.remove(worst_var)
-    step_rges.append(worst_rge)
+    best_var, best_rge = max(candidate_rges, key=lambda x: x[1])
+    removed_vars.append(best_var)
+    remaining_vars.remove(best_var)
+    step_rges.append(best_rge)
 
 # Compute AURGE
 x_rge = np.linspace(0, 1, len(step_rges))
@@ -128,7 +129,7 @@ print(f"AURGE: {rge_auc:.4f}")
 # Plot
 plt.figure(figsize=(6, 4))
 plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
-random_baseline = float(y_rge[0])
+random_baseline = float(y_rge[-1])
 plt.axhline(random_baseline, color='red', linestyle='--', label="Random Classifier (RGE = 0.5)")
 plt.xlabel("Fraction of Variables Removed")
 plt.ylabel("RGE")

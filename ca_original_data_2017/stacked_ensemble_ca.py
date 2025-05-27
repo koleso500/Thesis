@@ -13,7 +13,7 @@ from xgboost import XGBClassifier
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_robustness import rgr_all
-from safeai_files.core import rga
+from safeai_files.core import partial_rga_with_curves, rga
 
 # Data separation
 data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
@@ -120,7 +120,7 @@ for k in range(0, len(explain) + 1):
     remaining_vars.remove(best_var)
     step_rges.append(best_rge)
 
-# Normalize
+# Compute AURGE
 x_rge = np.linspace(0, 1, len(step_rges))
 y_rge = np.array(step_rges)
 rge_auc = auc(x_rge, y_rge)
@@ -163,3 +163,35 @@ plt.close()
 # Fairness
 fair = compute_rge_values(x_train, x_test, y_prob, stacking_clf, ["applicant_sex", "applicant_race_1"])
 print(fair)
+
+# Values for final metric
+# RGA part
+num_steps = len(step_rges) - 1
+step_rgas = []
+thresholds_rga = np.linspace(1, 0, num_steps + 1)
+for i in range(num_steps):
+    lower = float(thresholds_rga[i + 1])
+    upper = float(thresholds_rga[i])
+    partial = partial_rga_with_curves(y_test, y_prob, lower, upper, False)
+    step_rgas.append(partial)
+reverse_cumulative = np.cumsum(step_rgas[::-1])[::-1]
+x_final = np.concatenate((reverse_cumulative, [0.])).tolist()
+
+# RGE part
+y_final = step_rges
+
+# RGR part
+num_steps_rgr = len(step_rges)
+thresholds_rgr = np.linspace(0, 0.5, num_steps_rgr)
+z_final = [rgr_all(x_test, y_prob, stacking_clf, t) for t in thresholds_rgr]
+
+# Save results
+data = {
+    "x_final": x_final,
+    "y_final": y_final,
+    "z_final": z_final
+}
+json_str = json.dumps(data, indent=4)
+file_path = os.path.join("../saved_data", "final_results_stacked_ca.json")
+with open(file_path, "w", encoding="utf-8") as file:
+    file.write(json_str)

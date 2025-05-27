@@ -6,13 +6,13 @@ import os
 from safeai_files.utils import plot_model_curves, plot_metric_distribution, plot_metric_distribution_diff
 
 # Load values
-file_path_lr = os.path.join("../saved_data", "final_results_lr_ny_article.json")
-file_path_rf = os.path.join("../saved_data", "final_results_rf_ny_article.json")
-file_path_xgb = os.path.join("../saved_data", "final_results_xgb_ny_article.json")
-file_path_stacked = os.path.join("../saved_data", "final_results_stacked_ny_article.json")
-file_path_voting = os.path.join("../saved_data", "final_results_voting_ny_article.json")
-file_path_neural = os.path.join("../saved_data", "final_results_neural_ny_article.json")
-file_path_random = os.path.join("../saved_data", "final_results_random_ny_article.json")
+file_path_lr = os.path.join("../saved_data", "final_results_lr_ny_original.json")
+file_path_rf = os.path.join("../saved_data", "final_results_rf_ny_original.json")
+file_path_xgb = os.path.join("../saved_data", "final_results_xgb_ny_original.json")
+file_path_stacked = os.path.join("../saved_data", "final_results_stacked_ny_original.json")
+file_path_voting = os.path.join("../saved_data", "final_results_voting_ny_original.json")
+file_path_neural = os.path.join("../saved_data", "final_results_neural_ny_original.json")
+file_path_random = os.path.join("../saved_data", "final_results_random_ny_original.json")
 
 with open(file_path_lr, "r", encoding="utf-8") as file:
     data_lr = json.load(file)
@@ -84,49 +84,49 @@ z_neural_r = (np.array(z_neural) - np.array(z_random)).tolist()
 
 # All curves for LR
 x_rga = np.linspace(0, 1, len(y_random))
-plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York Article)")
+plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York Original)")
 
 # All curves for RF
-plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York Article)")
+plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York Original)")
 
 # All curves for XGB
-plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York Article)")
+plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York Original)")
 
 # All curves for SE
-plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York Article)")
+plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York Original)")
 
 # All curves for VE
-plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York Article)")
+plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York Original)")
 
 # All curves for NN
-plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York Article)")
+plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York Original)")
 
 # All curves for Random
-plot_model_curves(x_rga,[x_random, y_random, z_random], model_name="Random",title="Random Classifier Curves (New York Article)")
+plot_model_curves(x_rga,[x_random, y_random, z_random], model_name="Random",title="Random Classifier Curves (New York Original)")
 
 # All curves for difference LR and Random
 plot_model_curves(x_rga,[x_lr_r, y_lr_r, z_lr_r], model_name="Random", prefix="Difference",
-                  title="LR and Random Curves Difference (New York Article)")
+                  title="LR and Random Curves Difference (New York Original)")
 
 # All curves for difference RF and Random
 plot_model_curves(x_rga,[x_rf_r, y_rf_r, z_rf_r], model_name="Random", prefix="Difference",
-                  title="RF and Random Curves Difference (New York Article)")
+                  title="RF and Random Curves Difference (New York Original)")
 
 # All curves for difference XGB and Random
 plot_model_curves(x_rga,[x_xgb_r, y_xgb_r, z_xgb_r], model_name="Random", prefix="Difference",
-                  title="XGB and Random Curves Difference (New York Article)")
+                  title="XGB and Random Curves Difference (New York Original)")
 
 # All curves for difference SE and Random
 plot_model_curves(x_rga,[x_stacked_r, y_stacked_r, z_stacked_r], model_name="Random", prefix="Difference",
-                  title="SE and Random Curves Difference (New York Article)")
+                  title="SE and Random Curves Difference (New York Original)")
 
 # All curves for difference VE and Random
 plot_model_curves(x_rga,[x_voting_r, y_voting_r, z_voting_r], model_name="Random", prefix="Difference",
-                  title="VE and Random Curves Difference (New York Article)")
+                  title="VE and Random Curves Difference (New York Original)")
 
 # All curves for difference NN and Random
 plot_model_curves(x_rga,[x_neural_r, y_neural_r, z_neural_r], model_name="Random", prefix="Difference",
-                  title="NN and Random Curves Difference (New York Article)")
+                  title="NN and Random Curves Difference (New York Original)")
 
 plt.show()
 

@@ -12,9 +12,9 @@ from safeai_files.check_robustness import rgr_all
 from safeai_files.core import partial_rga_with_curves, rga
 
 # Data separation
-data_lending_ny_clean = pd.read_csv("../saved_data/data_lending_clean_ny_article.csv")
-predictors = data_lending_ny_clean.drop(columns=['response'])
-y = data_lending_ny_clean['response']
+data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
+predictors = data_lending_ca_clean.drop(columns=['action_taken'])
+y = data_lending_ca_clean['action_taken']
 
 # Split into 80% training and 20% testing
 x_train, x_test, y_train, y_test = train_test_split(predictors, y, test_size=0.2, random_state=15)
@@ -70,10 +70,10 @@ plt.figure(figsize=(6, 4))
 plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
 plt.xlabel("Fraction of Variables Removed")
 plt.ylabel("RGE")
-plt.title("Random Classifier RGE Curve (New York Article)")
+plt.title("Random Classifier RGE Curve (California)")
 plt.legend()
 plt.grid(True)
-plt.savefig("plots/Random_RGE_ny_article.png", dpi=300)
+plt.savefig("plots/Random_RGE_ca.png", dpi=300)
 plt.close()
 
 # Robustness
@@ -87,17 +87,17 @@ print(f"AURGR: {rgr_auc:.4f}")
 # Plot
 plt.figure(figsize=(6, 4))
 plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
-plt.title('Random Classifier RGR Curve (New York Article)')
+plt.title('Random Classifier RGR Curve (California)')
 plt.xlabel('Normalized Perturbation')
 plt.ylabel('RGR')
 plt.legend()
 plt.xlim([0, 1])
 plt.grid(True)
-plt.savefig("plots/Random_RGR_ny_article.png", dpi=300)
+plt.savefig("plots/Random_RGR_ca.png", dpi=300)
 plt.close()
 
 # Fairness
-fair = compute_rge_values(x_train, x_test, y_prob, random_model, ["applicant_sex_name", "applicant_race_1"])
+fair = compute_rge_values(x_train, x_test, y_prob, random_model, ["applicant_sex", "applicant_race_1"])
 print(fair)
 
 # Values for final metric
@@ -128,6 +128,6 @@ data = {
     "z_final": z_final
 }
 json_str = json.dumps(data, indent=4)
-file_path = os.path.join("../saved_data", "final_results_random_ny_article.json")
+file_path = os.path.join("../saved_data", "final_results_random_ca.json")
 with open(file_path, "w", encoding="utf-8") as file:
     file.write(json_str)

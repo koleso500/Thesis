@@ -8,7 +8,7 @@ import torch
 
 from safeai_files.check_explainability import compute_rge_values
 from safeai_files.check_robustness import rgr_all
-from safeai_files.core import rga
+from safeai_files.core import partial_rga_with_curves, rga
 from torch_for_credits.torch_model import CreditModel
 
 # Directory of the data
@@ -139,7 +139,8 @@ def evaluate_model_ny_original():
         candidate_rges = []
         for var in remaining_vars:
             current_vars = removed_vars + [var]
-            rge_k = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, current_vars, group=True)
+            rge_k = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, current_vars,
+                                       group=True)
             candidate_rges.append((var, rge_k.iloc[0, 0]))
 
         best_var, best_rge = max(candidate_rges, key=lambda x: x[1])
@@ -147,7 +148,7 @@ def evaluate_model_ny_original():
         remaining_vars.remove(best_var)
         step_rges.append(best_rge)
 
-    # Normalize
+    # Compute AURGE
     x_rge = np.linspace(0, 1, len(step_rges))
     y_rge = np.array(step_rges)
     rge_auc = auc(x_rge, y_rge)
@@ -190,6 +191,38 @@ def evaluate_model_ny_original():
     # Fairness
     fair = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, ["applicant_sex", "applicant_race_1"])
     print(fair)
+
+    # Values for final metric
+    # RGA part
+    num_steps = len(step_rges) - 1
+    step_rgas = []
+    thresholds_rga = np.linspace(1, 0, num_steps + 1)
+    for i in range(num_steps):
+        lower = float(thresholds_rga[i + 1])
+        upper = float(thresholds_rga[i])
+        partial = partial_rga_with_curves(y_test, y_pred_prob, lower, upper, False)
+        step_rgas.append(partial)
+    reverse_cumulative = np.cumsum(step_rgas[::-1])[::-1]
+    x_final = np.concatenate((reverse_cumulative, [0.])).tolist()
+
+    # RGE part
+    y_final = step_rges
+
+    # RGR part
+    num_steps_rgr = len(step_rges)
+    thresholds_rgr = np.linspace(0, 0.5, num_steps_rgr)
+    z_final = [rgr_all(x_test_scaled_names, y_pred_prob, best_model, t) for t in thresholds_rgr]
+
+    # Save results
+    data = {
+        "x_final": x_final,
+        "y_final": y_final,
+        "z_final": z_final
+    }
+    json_str = json.dumps(data, indent=4)
+    file_path = os.path.join("../saved_data", "final_results_neural_ny_original.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(json_str)
 
 if __name__ == "__main__":
     evaluate_model_ny_original()
