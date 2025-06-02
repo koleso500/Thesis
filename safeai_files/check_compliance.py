@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import re
 from sklearn.metrics import auc
 
 from safeai_files.check_explainability import compute_rge_values
@@ -7,9 +9,9 @@ from safeai_files.check_robustness import rgr_all
 from safeai_files.core import partial_rga_with_curves, rga
 
 
-def compliance_curves(x_train, x_test, y_test, y_prob, model):
+def safeai_values(x_train, x_test, y_test, y_prob, model, data_name, save_path):
     """
-    Compute SafeAI lists of values for plotting curves: Accuracy (RGA), Explainability (RGE AUC), Robustness (RGR AUC).
+    Compute SafeAI lists of values and plot curves: Accuracy (RGA), Explainability (RGE AUC), Robustness (RGR AUC).
 
     Parameters:
     -------------
@@ -23,6 +25,10 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
         Predicted probabilities for the positive class.
     model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier, XGBRegressor, BaseEstimator, torch.nn.Module]
         Trained classifier used in compute_rge_values and rgr_all.
+    data_name: str
+        Name of the dataset to show on the graph
+    save_path: str
+        Directory for saving graphs
 
     Returns:
     --------
@@ -35,6 +41,9 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
         z_final: list of float
     """
 
+    # Create directory if it doesn't exist
+    os.makedirs(save_path, exist_ok=True)
+
     # Accuracy (RGA)
     rga_value = rga(y_test, y_prob)
 
@@ -46,7 +55,7 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
 
     for k in range(0, len(explain) + 1):
         if k == 0:
-            step_rges.append(0.0)
+            step_rges.append(1.0)
             continue
 
         candidate_rges = []
@@ -66,6 +75,8 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
 
     # Plot
     model_name = model.__class__.__name__
+    model_name_spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', model_name)
+
     plt.figure(figsize=(6, 4))
     plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
     # Plot baseline only if not a Dummy model
@@ -75,9 +86,18 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
                     label=f"Random Baseline (RGE = {random_baseline:.2f})")
     plt.xlabel("Fraction of Variables Removed")
     plt.ylabel("RGE")
-    plt.title(f"{model_name} RGE Curve")
+    plt.title(f"{model_name_spaced} RGE Curve ({data_name})")
     plt.legend()
     plt.grid(True)
+
+    # Save the plot
+    model_name_clean = model_name_spaced.lower().replace(" ", "_")
+    data_name_clean = data_name.lower().replace(" ", "_")
+    filename_rge = f"{model_name_clean}_rge_{data_name_clean}.png"
+
+    full_path_rge = os.path.join(save_path, filename_rge)
+    plt.savefig(full_path_rge, dpi=300)
+    plt.close()
 
     # Robustness (RGR)
     thresholds = np.arange(0, 0.51, 0.01)
@@ -88,7 +108,7 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
     # Plot
     plt.figure(figsize=(6, 4))
     plt.plot(normalized_t, rgr_scores, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
-    plt.title(f'{model_name} RGR Curve')
+    plt.title(f'{model_name} RGR Curve ({data_name})')
     if model_name not in ["DummyRegressor", "DummyClassifier"]:
         plt.axhline(0.5, color='red', linestyle='--', label=f"Random Baseline (RGE = 0.5)")
     plt.xlabel('Normalized Perturbation')
@@ -96,6 +116,12 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
     plt.legend()
     plt.xlim([0, 1])
     plt.grid(True)
+
+    # Save the plot
+    filename_rgr = f"{model_name_clean}_rgr_{data_name_clean}.png"
+    full_path_rgr = os.path.join(save_path, filename_rgr)
+    plt.savefig(full_path_rgr, dpi=300)
+    plt.close()
 
     # Values for final compliance score
     # RGA
@@ -117,9 +143,6 @@ def compliance_curves(x_train, x_test, y_test, y_prob, model):
     num_steps_rgr = len(step_rges)
     thresholds_rgr = np.linspace(0, 0.5, num_steps_rgr)
     z_final = [rgr_all(x_test, y_prob, model, t) for t in thresholds_rgr]
-
-    # Plot all graphs
-    plt.show()
 
     return {
         'model_name': model.__class__.__name__,

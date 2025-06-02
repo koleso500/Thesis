@@ -270,3 +270,93 @@ def plot_metric_distribution_diff(metric_values, print_label, xlabel, title, bar
     plt.title(title)
     plt.grid(True)
     plt.legend()
+
+def plot_mean_histogram(rga, rge, rgr, *,
+                        model_name: str,
+                        bar_label: str,
+                        mean_type: str):
+    """
+    Compute different means (arithmetic, geometric, quadratic) of (rga, rge, rgr),
+    then call plot_metric_distribution_diff with the appropriate labels.
+
+    Parameters
+    ----------
+    rga, rge, rgr : array‐like
+        Three metrics for this model.
+    model_name : str
+        Name used inside the “print_label” (e.g. "Logistic Regression").
+    bar_label : str
+        The text to show under each bar in the histogram legend.
+    mean_type : str
+        Mean formula.
+    """
+    if mean_type == "arithmetic":
+        values = (rga + rge + rgr) / 3
+        print_label = f"Mean volume Arithmetic {model_name}"
+        xlabel = "Normalized Arithmetic Mean"
+        title = f"Histogram of Normalized Arithmetic Mean Values ({model_name})"
+    elif mean_type == "geometric":
+        values = np.cbrt(rga * rge * rgr)
+        print_label = f"Mean volume Geometric {model_name}"
+        xlabel = "Normalized Geometric Mean (1/3)"
+        title = f"Histogram of Normalized Geometric Mean (1/3) Values ({model_name})"
+    elif mean_type == "quadratic":
+        values = np.sqrt((rga ** 2 + rge ** 2 + rgr ** 2) / 3)
+        print_label = f"Mean volume Quadratic Mean (RMS) {model_name}"
+        xlabel = "Normalized Quadratic Mean (RMS)"
+        title = f"Histogram of Normalized Quadratic Mean (RMS) Values ({model_name})"
+    else:
+        raise ValueError("`mean_type` is not added yet")
+
+    plot_metric_distribution(
+        metric_values=values,
+        print_label=print_label,
+        xlabel=xlabel,
+        title=title,
+        bar_label=bar_label
+    )
+
+def plot_diff_mean_histogram(rga, rge, rgr, *,
+                        model_name: str,
+                        bar_label: str,
+                        mean_type: str):
+    """
+    Compute different means of differences values with base model (arithmetic, geometric, quadratic) of (rga, rge, rgr),
+    then call plot_metric_distribution_diff with the appropriate labels.
+
+    Parameters
+    ----------
+    rga, rge, rgr : array‐like
+        Three metrics for this model.
+    model_name : str
+        Name used inside the “print_label” (e.g. "Logistic Regression").
+    bar_label : str
+        The text to show under each bar in the histogram legend.
+    mean_type : str
+        Mean formula.
+    """
+    if mean_type == "arithmetic":
+        values = (rga + rge + rgr) / 3
+        print_label = f"Difference Arithmetic {model_name}"
+        xlabel = "Normalized Difference Arithmetic Mean"
+        title = f"Histogram of Normalized Difference Arithmetic Mean Values  ({model_name})"
+    elif mean_type == "geometric":
+        values = np.cbrt(rga * rge * rgr)
+        print_label = f"Difference Geometric Mean (1/3) {model_name}"
+        xlabel = "Normalized Difference Geometric Mean (1/3)"
+        title = f"Histogram of Normalized Difference Geometric Mean (1/3) Values ({model_name})"
+    elif mean_type == "quadratic":
+        values = np.sqrt((rga ** 2 + rge ** 2 + rgr ** 2) / 3)
+        print_label = f"Difference Mean volume Quadratic Mean (RMS) {model_name}"
+        xlabel = "Normalized Difference Quadratic Mean (RMS)"
+        title = f"Histogram of Normalized Difference Quadratic Mean (RMS) Values ({model_name})"
+    else:
+        raise ValueError("`mean_type` is not added yet")
+
+    plot_metric_distribution_diff(
+        metric_values=values,
+        print_label=print_label,
+        xlabel=xlabel,
+        title=title,
+        bar_label=bar_label
+    )

@@ -6,9 +6,8 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, auc, classification_report, confusion_matrix, f1_score, roc_curve
 import torch
 
+from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
-from safeai_files.check_robustness import rgr_all
-from safeai_files.core import partial_rga_with_curves, rga
 from torch_for_credits.torch_model import CreditModel
 
 # Directory of the data
@@ -120,104 +119,19 @@ def evaluate_model_ca():
     plt.close()
 
     # Integrating safeai
-    # Accuracy
-    rga_class = rga(y_test, y_pred_prob)
-    print(f"RGA value is equal to {rga_class}")
-
-    # Explainability
-    # RGE AUC
-    explain = x_train_scaled_names.columns.tolist()
-    remaining_vars = explain.copy()
-    removed_vars = []
-    step_rges = []
-
-    for k in range(0, len(explain) + 1):
-        if k == 0:
-            step_rges.append(0.0)
-            continue
-
-        candidate_rges = []
-        for var in remaining_vars:
-            current_vars = removed_vars + [var]
-            rge_k = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model, current_vars,
-                                       group=True)
-            candidate_rges.append((var, rge_k.iloc[0, 0]))
-
-        best_var, best_rge = max(candidate_rges, key=lambda x: x[1])
-        removed_vars.append(best_var)
-        remaining_vars.remove(best_var)
-        step_rges.append(best_rge)
-
-    # Compute AURGE
-    x_rge = np.linspace(0, 1, len(step_rges))
-    y_rge = np.array(step_rges)
-    rge_auc = auc(x_rge, y_rge)
-    print(f"AURGE: {rge_auc:.4f}")
-
-    # Plot
-    plt.figure(figsize=(6, 4))
-    plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
-    random_baseline = float(y_rge[-1])
-    plt.axhline(random_baseline, color='red', linestyle='--', label="Random Classifier (RGE = 0.5)")
-    plt.xlabel("Fraction of Variables Removed")
-    plt.ylabel("RGE")
-    plt.title("Neural Network RGE Curve (California)")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig("plots/NN_RGE_ca.png", dpi=300)
-    plt.close()
-
-    # Robustness
-    # RGR AUC
-    thresholds = np.arange(0, 0.51, 0.01)
-    results = [rgr_all(x_test_scaled_names, y_pred_prob, best_model, t) for t in thresholds]
-    normalized_thresholds = thresholds / 0.5
-    rgr_auc = auc(normalized_thresholds, results)
-    print(f"AURGR: {rgr_auc:.4f}")
-
-    # Plot
-    plt.figure(figsize=(6, 4))
-    plt.plot(normalized_thresholds, results, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
-    plt.title('Neural Network RGR Curve (California)')
-    plt.axhline(0.5, color='red', linestyle='--', label="Random Classifier (RGR = 0.5)")
-    plt.xlabel('Normalized Perturbation')
-    plt.ylabel('RGR')
-    plt.legend()
-    plt.xlim([0, 1])
-    plt.grid(True)
-    plt.savefig("plots/NN_RGR_ca.png", dpi=300)
-    plt.close()
+    results = safeai_values(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model,
+                            "California", "plots")
+    print(results)
 
     # Fairness
     fair = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model,   ["applicant_sex", "applicant_race_1"])
     print(fair)
 
-    # Values for final metric
-    # RGA part
-    num_steps = len(step_rges) - 1
-    step_rgas = []
-    thresholds_rga = np.linspace(1, 0, num_steps + 1)
-    for i in range(num_steps):
-        lower = float(thresholds_rga[i + 1])
-        upper = float(thresholds_rga[i])
-        partial = partial_rga_with_curves(y_test, y_pred_prob, lower, upper, False)
-        step_rgas.append(partial)
-    reverse_cumulative = np.cumsum(step_rgas[::-1])[::-1]
-    x_final = np.concatenate((reverse_cumulative, [0.])).tolist()
-
-    # RGE part
-    y_final = step_rges
-
-    # RGR part
-    num_steps_rgr = len(step_rges)
-    thresholds_rgr = np.linspace(0, 0.5, num_steps_rgr)
-    z_final = [rgr_all(x_test_scaled_names, y_pred_prob, best_model, t) for t in thresholds_rgr]
-
     # Save results
     data = {
-        "x_final": x_final,
-        "y_final": y_final,
-        "z_final": z_final
+        "x_final": results["x_final"],
+        "y_final": results["y_final"],
+        "z_final": results["z_final"]
     }
     json_str = json.dumps(data, indent=4)
     file_path = os.path.join("../saved_data", "final_results_neural_ca.json")

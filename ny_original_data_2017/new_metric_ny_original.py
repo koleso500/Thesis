@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from safeai_files.utils import plot_model_curves, plot_metric_distribution, plot_metric_distribution_diff
+from safeai_files.utils import plot_mean_histogram, plot_model_curves, plot_metric_distribution, plot_diff_mean_histogram
 
 # Load values
 file_path_lr = os.path.join("../saved_data", "final_results_lr_ny_original.json")
@@ -168,226 +168,123 @@ rga_ve, rge_ve, rgr_ve = np.meshgrid(rgas_ve, rges_ve, rgrs_ve, indexing='ij')
 rga_nn, rge_nn, rgr_nn = np.meshgrid(rgas_nn, rges_nn, rgrs_nn, indexing='ij')
 rga_r, rge_r, rgr_r = np.meshgrid(rgas_random, rges_random, rgrs_random, indexing='ij')
 
-# Histogram of the arithmetic mean metric LR
-values_a_lr = (rga_lr + rge_lr + rgr_lr) / 3
-plot_metric_distribution(
-    metric_values=values_a_lr,
-    print_label="Mean volume Arithmetic Logistic Regression",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
+# Means
+models = [
+    ((rga_lr,  rge_lr,  rgr_lr),  "Logistic Regression", "Logistic Regression"),
+    ((rga_rf,  rge_rf,  rgr_rf),  "Random Forest", "Random Forest Model"),
+    ((rga_xgb, rge_xgb, rgr_xgb), "XGBoosting", "XGB Model"),
+    ((rga_se,  rge_se,  rgr_se),  "Stacked Ensemble", "Stacked Ensemble Model"),
+    ((rga_ve,  rge_ve,  rgr_ve),  "Voting Ensemble", "Voting Ensemble Model"),
+    ((rga_nn,  rge_nn,  rgr_nn),  "Neural Network", "Neural Network Model"),
+    ((rga_r,   rge_r,   rgr_r),   "Random Classifier", "Random Classifier"),
+]
 
-# Histogram of the arithmetic mean metric RF
-values_a_rf = (rga_rf + rge_rf + rgr_rf) / 3
-plot_metric_distribution(
-    metric_values=values_a_rf,
-    print_label="Mean volume Arithmetic Random Forest",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (RF)",
-    bar_label="Random Forest Model"
-)
-
-# Histogram of the arithmetic mean metric XGB
-values_a_xgb = (rga_xgb + rge_xgb + rgr_xgb) / 3
-plot_metric_distribution(
-    metric_values=values_a_xgb,
-    print_label="Mean volume Arithmetic XGBoosting",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (XGB)",
-    bar_label="XGB Model"
-)
-
-# Histogram of the arithmetic mean metric SE
-values_a_se = (rga_se + rge_se + rgr_se) / 3
-plot_metric_distribution(
-    metric_values=values_a_se,
-    print_label="Mean volume Arithmetic Stacked Ensemble",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble Model"
-)
-
-# Histogram of the arithmetic mean metric VE
-values_a_ve = (rga_ve + rge_ve + rgr_ve) / 3
-plot_metric_distribution(
-    metric_values=values_a_ve,
-    print_label="Mean volume Arithmetic Voting Ensemble",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (Voting Ensemble)",
-    bar_label="Voting Ensemble Model"
-)
-
-# Histogram of the arithmetic mean metric NN
-values_a_nn = (rga_nn + rge_nn + rgr_nn) / 3
-plot_metric_distribution(
-    metric_values=values_a_nn,
-    print_label="Mean volume Arithmetic Neural Network",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (Neural Network)",
-    bar_label="Neural Network Model"
-)
-
-# Histogram of the arithmetic mean metric Random
-values_a_r = (rga_r + rge_r + rgr_r) / 3
-plot_metric_distribution(
-    metric_values=values_a_r,
-    print_label="Mean volume Arithmetic Random Classifier",
-    xlabel="Normalized Arithmetic Mean",
-    title="Histogram of Normalized Arithmetic Mean Values (Random)",
-    bar_label="Random Classifier"
-)
-
+# All arithmetic mean histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+    plot_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="arithmetic"
+    )
 plt.show()
 
-# Histogram of the geometric mean metric LR (1/3)
-values_g_lr = (rga_lr * rge_lr * rgr_lr) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_lr,
-    print_label="Mean volume Geometric Logistic Regression",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
-
-# Histogram of the geometric mean metric RF (1/3)
-values_g_rf = (rga_rf * rge_rf * rgr_rf) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_rf,
-    print_label="Mean volume Geometric Random Forest",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (RF)",
-    bar_label="Random Forest Model"
-)
-
-# Histogram of the geometric mean metric XGB (1/3)
-values_g_xgb = (rga_xgb * rge_xgb * rgr_xgb) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_xgb,
-    print_label="Mean volume Geometric XGBoosting",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (XGB)",
-    bar_label="XGB Model"
-)
-
-# Histogram of the geometric mean metric SE (1/3)
-values_g_se = (rga_se * rge_se * rgr_se) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_se,
-    print_label="Mean volume Geometric Stacked Ensemble",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble Model"
-)
-
-# Histogram of the geometric mean metric VE (1/3)
-values_g_ve = (rga_ve * rge_ve * rgr_ve) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_ve,
-    print_label="Mean volume Geometric Voting Ensemble",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (Voting Ensemble)",
-    bar_label="Voting Ensemble Model"
-)
-
-# Histogram of the geometric mean metric NN (1/3)
-values_g_nn = (rga_nn * rge_nn * rgr_nn) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_nn,
-    print_label="Mean volume Geometric Neural Network",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (Neural Network)",
-    bar_label="Neural Network Model"
-)
-
-# Histogram of the geometric mean metric Random (1/3)
-values_g_r = (rga_r * rge_r * rgr_r) ** (1/3)
-plot_metric_distribution(
-    metric_values=values_g_r,
-    print_label="Mean volume Geometric Random Classifier",
-    xlabel="Normalized Geometric Mean (1/3)",
-    title="Histogram of Normalized Geometric Mean (1/3) Values (Random)",
-    bar_label="Random Classifier"
-)
-
+# All geometric mean histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+    plot_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="geometric"
+    )
 plt.show()
 
-# Histogram of the Quadratic Mean (RMS) metric LR
-values_rms_lr = ((rga_lr ** 2 + rge_lr ** 2 + rgr_lr ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_lr,
-    print_label="Mean volume Quadratic Mean (RMS) Logistic Regression",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
+# All quadratic mean histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+    plot_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="quadratic"
+    )
+plt.show()
 
-# Histogram of the Quadratic Mean (RMS) metric RF
-values_rms_rf = ((rga_rf ** 2 + rge_rf ** 2 + rgr_rf ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_rf,
-    print_label="Mean volume Quadratic Mean (RMS) Random Forest",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (RF)",
-    bar_label="Random Forest Model"
-)
+# Differences Means
+# Values
+rga_d_lr = np.array(x_lr_r)
+rge_d_lr = np.array(y_lr_r)
+rgr_d_lr = np.array(z_lr_r)
 
-# Histogram of the Quadratic Mean (RMS) metric XGB
-values_rms_xgb = ((rga_xgb ** 2 + rge_xgb ** 2 + rgr_xgb ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_xgb,
-    print_label="Mean volume Quadratic Mean (RMS) XGBoosting",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (XGB)",
-    bar_label="XGB Model"
-)
+rga_d_rf = np.array(x_rf_r)
+rge_d_rf = np.array(y_rf_r)
+rgr_d_rf = np.array(z_rf_r)
 
-# Histogram of the Quadratic Mean (RMS) metric SE
-values_rms_se = ((rga_se ** 2 + rge_se ** 2 + rgr_se ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_se,
-    print_label="Mean volume Quadratic Mean (RMS) Stacked Ensemble",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble Model"
-)
+rga_d_xgb = np.array(x_xgb_r)
+rge_d_xgb = np.array(y_xgb_r)
+rgr_d_xgb = np.array(z_xgb_r)
 
-# Histogram of the Quadratic Mean (RMS) metric VE
-values_rms_ve = ((rga_ve ** 2 + rge_ve ** 2 + rgr_ve ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_ve,
-    print_label="Mean volume Quadratic Mean (RMS) Voting Ensemble",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (Voting Ensemble)",
-    bar_label="Voting Ensemble Model"
-)
+rga_d_se = np.array(x_stacked_r)
+rge_d_se = np.array(y_stacked_r)
+rgr_d_se = np.array(z_stacked_r)
 
-# Histogram of the Quadratic Mean (RMS) metric NN
-values_rms_nn = ((rga_nn ** 2 + rge_nn ** 2 + rgr_nn ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_nn,
-    print_label="Mean volume Quadratic Mean (RMS) Neural Network",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (Neural Network)",
-    bar_label="Neural Network Model"
-)
+rga_d_ve = np.array(x_voting_r)
+rge_d_ve = np.array(y_voting_r)
+rgr_d_ve = np.array(z_voting_r)
 
-# Histogram of the Quadratic Mean (RMS) metric Random
-values_rms_r = ((rga_r ** 2 + rge_r ** 2 + rgr_r ** 2) / 3) ** (1/2)
-plot_metric_distribution(
-    metric_values=values_rms_r,
-    print_label="Mean volume Quadratic Mean (RMS) Random Classifier",
-    xlabel="Normalized Quadratic Mean (RMS)",
-    title="Histogram of Normalized Quadratic Mean (RMS) Values (Random)",
-    bar_label="Random Classifier"
-)
+rga_d_nn = np.array(x_neural_r)
+rge_d_nn = np.array(y_neural_r)
+rgr_d_nn = np.array(z_neural_r)
 
+rga_lr_d, rge_lr_d, rgr_lr_d = np.meshgrid(rga_d_lr, rge_d_lr, rgr_d_lr, indexing='ij')
+rga_rf_d, rge_rf_d, rgr_rf_d = np.meshgrid(rga_d_rf, rge_d_rf, rgr_d_rf, indexing='ij')
+rga_xgb_d, rge_xgb_d, rgr_xgb_d = np.meshgrid(rga_d_xgb, rge_d_xgb, rgr_d_xgb, indexing='ij')
+rga_se_d, rge_se_d, rgr_se_d = np.meshgrid(rga_d_se, rge_d_se, rgr_d_se, indexing='ij')
+rga_ve_d, rge_ve_d, rgr_ve_d = np.meshgrid(rga_d_ve, rge_d_ve, rgr_d_ve, indexing='ij')
+rga_nn_d, rge_nn_d, rgr_nn_d = np.meshgrid(rga_d_nn, rge_d_nn, rgr_d_nn, indexing='ij')
+
+models_diff = [
+    ((rga_lr_d,  rge_lr_d,  rgr_lr_d),  "Logistic Regression", "Logistic Regression"),
+    ((rga_rf_d,  rge_rf_d,  rgr_rf_d),  "Random Forest", "Random Forest Model"),
+    ((rga_xgb_d, rge_xgb_d, rgr_xgb_d), "XGBoosting", "XGB Model"),
+    ((rga_se_d,  rge_se_d,  rgr_se_d),  "Stacked Ensemble", "Stacked Ensemble Model"),
+    ((rga_ve_d,  rge_ve_d,  rgr_ve_d),  "Voting Ensemble", "Voting Ensemble Model"),
+    ((rga_nn_d,  rge_nn_d,  rgr_nn_d),  "Neural Network", "Neural Network Model"),
+]
+
+# All arithmetic mean differences histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+    plot_diff_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="arithmetic"
+    )
+plt.show()
+
+# All geometric mean differences histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+    plot_diff_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="geometric"
+    )
+plt.show()
+
+# All quadratic mean differences histograms
+for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+    plot_diff_mean_histogram(
+        rga_var, rge_var, rgr_var,
+        model_name=model_name,
+        bar_label=bar_label,
+        mean_type="quadratic"
+    )
 plt.show()
 
 # Slope Arithmetic
 def slope_arithmetic(x, y, z):
     dx = [x[i] - x[i+1] for i in range(len(x)-1)]
-    dy = [y[i+1] - y[i] for i in range(len(y)-1)]
+    dy = [y[i] - y[i+1] for i in range(len(y)-1)]
     dz = [z[i] - z[i+1] for i in range(len(z)-1)]
     rgas = np.array(dx)
     rges = np.array(dy)
@@ -468,209 +365,48 @@ plot_metric_distribution(
 
 plt.show()
 
-# Differences Plots Arithmetic Mean
-# Values
-rga_d_lr = np.array(x_lr_r)
-rge_d_lr = np.array(y_lr_r)
-rgr_d_lr = np.array(z_lr_r)
+# Hypervolume approach
+def hypervolume(x, y, z):
+    v1 = np.array(x)
+    v2 = np.array(y)
+    v3 = np.array(z)
 
-rga_d_rf = np.array(x_rf_r)
-rge_d_rf = np.array(y_rf_r)
-rgr_d_rf = np.array(z_rf_r)
+    # Construct Gram matrix
+    g = np.array([
+        [np.dot(v1, v1), np.dot(v1, v2), np.dot(v1, v3)],
+        [np.dot(v2, v1), np.dot(v2, v2), np.dot(v2, v3)],
+        [np.dot(v3, v1), np.dot(v3, v2), np.dot(v3, v3)]
+    ])
 
-rga_d_xgb = np.array(x_xgb_r)
-rge_d_xgb = np.array(y_xgb_r)
-rgr_d_xgb = np.array(z_xgb_r)
+    # Hypervolume
+    volume = np.sqrt(np.linalg.det(g))
 
-rga_d_se = np.array(x_stacked_r)
-rge_d_se = np.array(y_stacked_r)
-rgr_d_se = np.array(z_stacked_r)
+    return volume
 
-rga_d_ve = np.array(x_voting_r)
-rge_d_ve = np.array(y_voting_r)
-rgr_d_ve = np.array(z_voting_r)
+# Hypervolume LR
+volume_lr = hypervolume(rgas_lr, rges_lr, rgrs_lr)
+print(f"Hypervolume LR: {volume_lr:.3f}")
 
-rga_d_nn = np.array(x_neural_r)
-rge_d_nn = np.array(y_neural_r)
-rgr_d_nn = np.array(z_neural_r)
+# Hypervolume RF
+volume_rf = hypervolume(rgas_rf, rges_rf, rgrs_rf)
+print(f"Hypervolume RF: {volume_rf:.3f}")
 
-rga_lr_d, rge_lr_d, rgr_lr_d = np.meshgrid(rga_d_lr, rge_d_lr, rgr_d_lr, indexing='ij')
-rga_rf_d, rge_rf_d, rgr_rf_d = np.meshgrid(rga_d_rf, rge_d_rf, rgr_d_rf, indexing='ij')
-rga_xgb_d, rge_xgb_d, rgr_xgb_d = np.meshgrid(rga_d_xgb, rge_d_xgb, rgr_d_xgb, indexing='ij')
-rga_se_d, rge_se_d, rgr_se_d = np.meshgrid(rga_d_se, rge_d_se, rgr_d_se, indexing='ij')
-rga_ve_d, rge_ve_d, rgr_ve_d = np.meshgrid(rga_d_ve, rge_d_ve, rgr_d_ve, indexing='ij')
-rga_nn_d, rge_nn_d, rgr_nn_d = np.meshgrid(rga_d_nn, rge_d_nn, rgr_d_nn, indexing='ij')
+# Hypervolume XGB
+volume_xgb = hypervolume(rgas_xgb, rges_xgb, rgrs_xgb)
+print(f"Hypervolume XGB: {volume_xgb:.3f}")
 
-values_diff_lr = (rga_lr_d + rge_lr_d + rgr_lr_d) / 3
-values_diff_rf = (rga_rf_d + rge_rf_d + rgr_rf_d) / 3
-values_diff_xgb = (rga_xgb_d + rge_xgb_d + rgr_xgb_d) / 3
-values_diff_se = (rga_se_d + rge_se_d + rgr_se_d) / 3
-values_diff_ve = (rga_ve_d + rge_ve_d + rgr_ve_d) / 3
-values_diff_nn = (rga_nn_d + rge_nn_d + rgr_nn_d) / 3
+# Hypervolume SE
+volume_se = hypervolume(rgas_se, rges_se, rgrs_se)
+print(f"Hypervolume SE: {volume_se:.3f}")
 
+# Hypervolume VE
+volume_ve = hypervolume(rgas_ve, rges_ve, rgrs_ve)
+print(f"Hypervolume VE: {volume_ve:.3f}")
 
-plot_metric_distribution_diff(
-    metric_values=values_diff_lr,
-    print_label="Difference Arithmetic Logistic Regression",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
+# Hypervolume NN
+volume_nn = hypervolume(rgas_nn, rges_nn, rgrs_nn)
+print(f"Hypervolume NN: {volume_nn:.3f}")
 
-plot_metric_distribution_diff(
-    metric_values=values_diff_rf,
-    print_label="Difference Arithmetic Random Forest",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (Random Forest)",
-    bar_label="Random Forest"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_xgb,
-    print_label="Difference Arithmetic XGBoosting",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (XGBoosting)",
-    bar_label="XGBoosting"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_se,
-    print_label="Difference Arithmetic Stacked Ensemble",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_ve,
-    print_label="Difference Arithmetic Voting Ensemble",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (Voting Ensemble)",
-    bar_label="Voting Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_nn,
-    print_label="Difference Arithmetic Neural Network",
-    xlabel="Difference Arithmetic Mean",
-    title="Histogram of Difference Arithmetic Mean Values (Neural Network)",
-    bar_label="Neural Network"
-)
-
-plt.show()
-
-# Differences Plots Geometric Mean (1/3)
-values_diff_g_lr = np.cbrt(rga_lr_d * rge_lr_d * rgr_lr_d)
-values_diff_g_rf = np.cbrt(rga_rf_d * rge_rf_d * rgr_rf_d)
-values_diff_g_xgb = np.cbrt(rga_xgb_d * rge_xgb_d * rgr_xgb_d)
-values_diff_g_se = np.cbrt(rga_se_d * rge_se_d * rgr_se_d)
-values_diff_g_ve = np.cbrt(rga_ve_d * rge_ve_d * rgr_ve_d)
-values_diff_g_nn = np.cbrt(rga_nn_d * rge_nn_d * rgr_nn_d)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_lr,
-    print_label="Difference Geometric Mean (1/3) Logistic Regression",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_rf,
-    print_label="Difference Geometric Mean (1/3) Random Forest",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (Random Forest)",
-    bar_label="Random Forest"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_xgb,
-    print_label="Difference Geometric Mean (1/3) XGBoosting",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (XGBoosting)",
-    bar_label="XGBoosting"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_se,
-    print_label="Difference Geometric Mean (1/3) Stacked Ensemble",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_ve,
-    print_label="Difference Geometric Mean (1/3) Voting Ensemble",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (Voting Ensemble)",
-    bar_label="Voting Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_g_nn,
-    print_label="Difference Geometric Mean (1/3) Neural Network",
-    xlabel="Difference Geometric Mean (1/3)",
-    title="Histogram of Difference Geometric Mean (1/3) Values (Neural Network)",
-    bar_label="Neural Network"
-)
-
-plt.show()
-
-# Differences Plots Quadratic Mean (RMS)
-values_diff_rms_lr = np.sqrt((rga_lr_d ** 2 + rge_lr_d ** 2 + rgr_lr_d ** 2) / 3)
-values_diff_rms_rf = np.sqrt((rga_rf_d ** 2 + rge_rf_d ** 2 + rgr_rf_d ** 2) / 3)
-values_diff_rms_xgb = np.sqrt((rga_xgb_d ** 2 + rge_xgb_d ** 2 + rgr_xgb_d ** 2) / 3)
-values_diff_rms_se = np.sqrt((rga_se_d ** 2 + rge_se_d ** 2 + rgr_se_d ** 2) / 3)
-values_diff_rms_ve = np.sqrt((rga_ve_d ** 2 + rge_ve_d ** 2 + rgr_ve_d ** 2) / 3)
-values_diff_rms_nn = np.sqrt((rga_nn_d ** 2 + rge_nn_d ** 2 + rgr_nn_d ** 2) / 3)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_lr,
-    print_label="Difference Quadratic Mean (RMS) Logistic Regression",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (Logistic Regression)",
-    bar_label="Logistic Regression"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_rf,
-    print_label="Difference Quadratic Mean (RMS) Random Forest",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (Random Forest)",
-    bar_label="Random Forest"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_xgb,
-    print_label="Difference Quadratic Mean (RMS) XGBoosting",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (XGBoosting)",
-    bar_label="XGBoosting"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_se,
-    print_label="Difference Quadratic Mean (RMS) Stacked Ensemble",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (Stacked Ensemble)",
-    bar_label="Stacked Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_ve,
-    print_label="Difference Quadratic Mean (RMS) Voting Ensemble",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (Voting Ensemble)",
-    bar_label="Voting Ensemble"
-)
-
-plot_metric_distribution_diff(
-    metric_values=values_diff_rms_nn,
-    print_label="Difference Quadratic Mean (RMS) Neural Network",
-    xlabel="Difference Quadratic Mean (RMS)",
-    title="Histogram of Difference Quadratic Mean (RMS) Values (Neural Network)",
-    bar_label="Neural Network"
-)
-
-plt.show()
+# Hypervolume R
+volume_r = hypervolume(rgas_random, rges_random, rgrs_random)
+print(f"Hypervolume Random: {volume_r:.3f}")

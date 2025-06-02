@@ -53,8 +53,8 @@ def compute_rge_values(xtrain: pd.DataFrame,
         # Calculate yhat after manipulating all variables in the group
         yhat_rm = find_yhat(model, xtest)
         
-        # Calculate a single RGE for the entire group
-        rge = 1 - (rga(yhat, yhat_rm))
+        # Calculate a single RGE for the entire group except these variables
+        rge = rga(yhat, yhat_rm)
         return pd.DataFrame([rge], index=[str(variables)], columns=["RGE"])
 
     else:
