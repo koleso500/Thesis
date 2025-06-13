@@ -13,6 +13,7 @@ from xgboost import XGBClassifier
 
 from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
+from safeai_files.utils import save_model_metrics
 
 # Data separation
 data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
@@ -92,8 +93,9 @@ print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_best))
 print("Classification Report:\n", classification_report(y_test, y_pred_best))
 
 # Integrating safeai
-results = safeai_values(x_train, x_test, y_test, y_prob, stacking_clf, "California", "plots")
+results = safeai_values(x_train, x_test, y_test, y_prob, stacking_clf, "California HMDA", "plots")
 print(results)
+save_model_metrics(results)
 
 # Fairness
 fair = compute_rge_values(x_train, x_test, y_prob, stacking_clf, ["applicant_sex", "applicant_race_1"])

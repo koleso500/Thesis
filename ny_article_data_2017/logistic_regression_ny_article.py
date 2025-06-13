@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
+from safeai_files.utils import save_model_metrics
 
 # Data separation
 data_lending_ny_clean = pd.read_csv("../saved_data/data_lending_clean_ny_article.csv")
@@ -80,6 +81,7 @@ print("Classification Report:\n", classification_report(y_test, y_pred_best))
 # Integrating safeai
 results = safeai_values(x_train_scaled, x_test_scaled, y_test, y_prob, log_model, "New York Article", "plots")
 print(results)
+save_model_metrics(results)
 
 # Fairness
 fair = compute_rge_values(x_train_scaled, x_test_scaled, y_prob, log_model, ["applicant_sex_name", "applicant_race_1"])

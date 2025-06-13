@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, auc, classification_report, confusio
 
 from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
+from safeai_files.utils import save_model_metrics
 
 # Load best model and variables
 best_model = joblib.load("../saved_models/best_rf_model_ny_original.joblib")
@@ -69,6 +70,7 @@ print("Classification Report:\n", classification_report(y_test, y_pred_best))
 # Integrating safeai
 results = safeai_values(x_train, x_test, y_test, y_prob, best_model, "New York Original", "plots")
 print(results)
+save_model_metrics(results)
 
 # Fairness
 fair = compute_rge_values(x_train, x_test, y_prob, best_model, ["applicant_sex", "applicant_race_1"])

@@ -358,3 +358,110 @@ print(f"Hypervolume VE: {volume_ve:.3f}")
 # Hypervolume R
 volume_r = hypervolume(rgas_random, rges_random, rgrs_random)
 print(f"Hypervolume Random: {volume_r:.3f}")
+
+# TOPSIS approach
+best_x_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+worst_x_list = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+best_y_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+worst_y_list = [1.0, 0.9736842105263158, 0.9473684210526316, 0.9210526315789473, 0.8947368421052632, 0.868421052631579, 0.8421052631578947, 0.8157894736842105, 0.7894736842105263, 0.7631578947368421, 0.736842105263158, 0.7105263157894737, 0.6842105263157895, 0.6578947368421053, 0.631578947368421, 0.6052631578947368, 0.5789473684210527, 0.5526315789473685, 0.5263157894736843, 0.5 ]
+
+best_z_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+worst_z_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+x_plus = np.mean(best_x_list)
+x_minus = np.mean(worst_x_list)
+
+y_plus = np.mean(best_y_list)
+y_minus = np.mean(worst_y_list)
+
+z_plus = np.mean(best_z_list)
+z_minus = np.mean(worst_z_list)
+
+mean_x_lr = np.mean(rgas_lr)
+mean_y_lr = np.mean(rges_lr)
+mean_z_lr = np.mean(rgrs_lr)
+
+mean_x_rf = np.mean(rgas_rf)
+mean_y_rf = np.mean(rges_rf)
+mean_z_rf = np.mean(rgrs_rf)
+
+mean_x_xgb = np.mean(rgas_xgb)
+mean_y_xgb = np.mean(rges_xgb)
+mean_z_xgb = np.mean(rgrs_xgb)
+
+mean_x_se = np.mean(rgas_se)
+mean_y_se = np.mean(rges_se)
+mean_z_se = np.mean(rgrs_se)
+
+mean_x_ve = np.mean(rgas_ve)
+mean_y_ve = np.mean(rges_ve)
+mean_z_ve = np.mean(rgrs_ve)
+
+mean_x_r = np.mean(rgas_random)
+mean_y_r = np.mean(rges_random)
+mean_z_r = np.mean(rgrs_random)
+
+means = {
+    "Logistic":       (mean_x_lr, mean_y_lr, mean_z_lr),
+    "RandomForest":   (mean_x_rf, mean_y_rf, mean_z_rf),
+    "XGBoost":        (mean_x_xgb, mean_y_xgb, mean_z_xgb),
+    "StackedEnsemble":(mean_x_se, mean_y_se, mean_z_se),
+    "VotingEnsemble": (mean_x_ve,  mean_y_ve,  mean_z_ve),
+    "RandomBaseline": (mean_x_r,  mean_y_r,  mean_z_r),
+}
+
+df = pd.DataFrame.from_dict(
+    means,
+    orient="index",
+    columns=["mean_x", "mean_y", "mean_z"]
+)
+
+for col in ["mean_x", "mean_y", "mean_z"]:
+    vec = df[col].values.astype(float)
+    norm = np.sqrt((vec**2).sum())
+    df["r_" + col] = vec / norm
+
+weights = np.array([1/3, 1/3, 1/3])
+df["v_mean_x"] = df["r_mean_x"] * weights[0]
+df["v_mean_y"] = df["r_mean_y"] * weights[1]
+df["v_mean_z"] = df["r_mean_z"] * weights[2]
+
+norm_x = np.sqrt((df["mean_x"].values ** 2).sum())
+norm_y = np.sqrt((df["mean_y"].values ** 2).sum())
+norm_z = np.sqrt((df["mean_z"].values ** 2).sum())
+
+r_x_plus = x_plus / norm_x
+r_x_minus = x_minus / norm_x
+
+r_y_plus = y_plus / norm_y
+r_y_minus = y_minus / norm_y
+
+r_z_plus = z_plus / norm_z
+r_z_minus = z_minus / norm_z
+
+v_x_plus  = r_x_plus  * weights[0]
+v_x_minus = r_x_minus * weights[0]
+
+v_y_plus  = r_y_plus  * weights[1]
+v_y_minus = r_y_minus * weights[1]
+
+v_z_plus  = r_z_plus  * weights[2]
+v_z_minus = r_z_minus * weights[2]
+
+df["S_plus"] = np.sqrt(
+    (df["v_mean_x"] - v_x_plus)**2 +
+    (df["v_mean_y"] - v_y_plus)**2 +
+    (df["v_mean_z"] - v_z_plus)**2
+)
+
+df["S_minus"] = np.sqrt(
+    (df["v_mean_x"] - v_x_minus)**2 +
+    (df["v_mean_y"] - v_y_minus)**2 +
+    (df["v_mean_z"] - v_z_minus)**2
+)
+
+df["C"] = df["S_minus"] / (df["S_plus"] + df["S_minus"])
+df["Rank"] = df["C"].rank(ascending=False)
+df_sorted = df.sort_values("C", ascending=False)
+print(df_sorted[["C", "Rank"]])

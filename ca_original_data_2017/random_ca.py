@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 
 from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
+from safeai_files.utils import save_model_metrics
 
 # Data separation
 data_lending_ca_clean = pd.read_csv("../saved_data/data_lending_clean_ca.csv")
@@ -28,8 +29,9 @@ y_pred = random_model.predict(x_test)
 y_prob = random_model.predict_proba(x_test)[:, 1]
 
 # Integrating safeai
-results = safeai_values(x_train, x_test, y_test, y_prob, random_model, "California", "plots")
+results = safeai_values(x_train, x_test, y_test, y_prob, random_model, "California HMDA", "plots")
 print(results)
+save_model_metrics(results)
 
 # Fairness
 fair = compute_rge_values(x_train, x_test, y_prob, random_model, ["applicant_sex", "applicant_race_1"])

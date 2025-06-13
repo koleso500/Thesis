@@ -1,6 +1,9 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
+import io
+import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 from sklearn.base import BaseEstimator, is_classifier, is_regressor
 import torch
@@ -360,3 +363,11 @@ def plot_diff_mean_histogram(rga, rge, rgr, *,
         title=title,
         bar_label=bar_label
     )
+
+def save_model_metrics(result, save_dir="results_metrics"):
+    os.makedirs(save_dir, exist_ok=True)
+    model_name = result['model_name']
+    filepath = os.path.join(save_dir, f"{model_name}_results.json")
+    f: io.TextIOWrapper
+    with open(filepath, 'w') as f:
+        json.dump(result, f, indent=4)

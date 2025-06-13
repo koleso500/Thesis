@@ -8,7 +8,8 @@ import torch
 
 from safeai_files.check_compliance import safeai_values
 from safeai_files.check_explainability import compute_rge_values
-from torch_for_credits.torch_model import CreditModel
+from safeai_files.utils import save_model_metrics
+from torch_for_credits.torch_model import NeuralNetwork
 
 # Directory of the data
 save_dir = "../saved_data"
@@ -38,7 +39,7 @@ val_losses = np.load("../saved_data/best_val_losses_ca.npy")
 
 def evaluate_model_ca():
     # Load the best model
-    best_model = CreditModel(x_train_scaled_names.shape[1], best_params[2], best_params[3])
+    best_model = NeuralNetwork(x_train_scaled_names.shape[1], best_params[2], best_params[3])
     best_model.load_state_dict(torch.load('../saved_models/best_torch_model_ca.pth', weights_only=True))
     best_model.eval()
 
@@ -120,8 +121,9 @@ def evaluate_model_ca():
 
     # Integrating safeai
     results = safeai_values(x_train_scaled_names, x_test_scaled_names, y_test, y_pred_prob, best_model,
-                            "California", "plots")
+                            "California HMDA", "plots")
     print(results)
+    save_model_metrics(results)
 
     # Fairness
     fair = compute_rge_values(x_train_scaled_names, x_test_scaled_names, y_pred_prob, best_model,   ["applicant_sex", "applicant_race_1"])

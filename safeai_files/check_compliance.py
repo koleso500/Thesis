@@ -75,7 +75,7 @@ def safeai_values(x_train, x_test, y_test, y_prob, model, data_name, save_path):
 
     # Plot
     model_name = model.__class__.__name__
-    model_name_spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', model_name)
+    model_name_spaced = ' '.join(re.findall(r'[A-Z]{2,}(?=[A-Z][a-z]|[A-Z]*$)|[A-Z][a-z]*', model_name))
 
     plt.figure(figsize=(6, 4))
     plt.plot(x_rge, y_rge, marker='o', label=f"RGE Curve (AURGE = {rge_auc:.4f})")
@@ -108,7 +108,7 @@ def safeai_values(x_train, x_test, y_test, y_prob, model, data_name, save_path):
     # Plot
     plt.figure(figsize=(6, 4))
     plt.plot(normalized_t, rgr_scores, linestyle='-', label=f"RGR Curve (AURGR = {rgr_auc:.4f})")
-    plt.title(f'{model_name} RGR Curve ({data_name})')
+    plt.title(f'{model_name_spaced} RGR Curve ({data_name})')
     if model_name not in ["DummyRegressor", "DummyClassifier"]:
         plt.axhline(0.5, color='red', linestyle='--', label=f"Random Baseline (RGE = 0.5)")
     plt.xlabel('Normalized Perturbation')
@@ -151,7 +151,25 @@ def safeai_values(x_train, x_test, y_test, y_prob, model, data_name, save_path):
         'rgr_auc': rgr_auc,
         'x_final': x_final,
         'y_final': y_final,
-        'z_final': z_final
+        'z_final': z_final,
+        'x_rge': x_rge.tolist(),
+        'y_rge': y_rge.tolist(),
+        'x_rgr': normalized_t.tolist(),
+        'y_rgr': rgr_scores
     }
+
+
+def compliance_topsis(rga, rge, rgr, *, weights=None):
+    if weights is None:
+        weights = np.array([1 / 3, 1 / 3, 1 / 3], dtype=float)
+    else:
+        weights = np.asarray(weights, dtype=float)
+        if weights.shape != (3,):
+            raise ValueError("weights must be an array‐like of length 3.")
+
+    mean_x = np.mean(rga)
+    mean_y = np.mean(rge)
+    mean_z = np.mean(rgr)
+
 
 
