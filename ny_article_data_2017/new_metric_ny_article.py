@@ -84,51 +84,63 @@ y_neural_r = (np.array(y_neural) - np.array(y_random)).tolist()
 z_neural_r = (np.array(z_neural) - np.array(z_random)).tolist()
 
 # All curves for LR
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
 x_rga = np.linspace(0, 1, len(y_random))
-plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York Article)")
+plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York Article)", ax=axs[0])
 
 # All curves for RF
-plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York Article)")
+plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York Article)", ax=axs[1])
 
 # All curves for XGB
-plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York Article)")
+plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York Article)", ax=axs[2])
 
 # All curves for SE
-plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York Article)")
+plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York Article)", ax=axs[3])
 
 # All curves for VE
-plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York Article)")
+plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York Article)", ax=axs[4])
 
 # All curves for NN
-plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York Article)")
+plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York Article)", ax=axs[5])
 
 # All curves for Random
 plot_model_curves(x_rga,[x_random, y_random, z_random], model_name="Random",title="Random Classifier Curves (New York Article)")
 
+fig.subplots_adjust(top=0.90, hspace=0.4)
+plt.tight_layout()
+plt.show()
+
 # All curves for difference LR and Random
-plot_model_curves(x_rga,[x_lr_r, y_lr_r, z_lr_r], model_name="Random", prefix="Difference",
-                  title="LR and Random Curves Difference (New York Article)")
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+plot_model_curves(x_rga,[x_lr_r, y_lr_r, z_lr_r], model_name="Baseline", prefix="Difference",
+                  title="LR Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[0])
 
 # All curves for difference RF and Random
-plot_model_curves(x_rga,[x_rf_r, y_rf_r, z_rf_r], model_name="Random", prefix="Difference",
-                  title="RF and Random Curves Difference (New York Article)")
+plot_model_curves(x_rga,[x_rf_r, y_rf_r, z_rf_r], model_name="Baseline", prefix="Difference",
+                  title="RF Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[1])
 
 # All curves for difference XGB and Random
-plot_model_curves(x_rga,[x_xgb_r, y_xgb_r, z_xgb_r], model_name="Random", prefix="Difference",
-                  title="XGB and Random Curves Difference (New York Article)")
+plot_model_curves(x_rga,[x_xgb_r, y_xgb_r, z_xgb_r], model_name="Baseline", prefix="Difference",
+                  title="XGB Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[2])
 
 # All curves for difference SE and Random
-plot_model_curves(x_rga,[x_stacked_r, y_stacked_r, z_stacked_r], model_name="Random", prefix="Difference",
-                  title="SE and Random Curves Difference (New York Article)")
+plot_model_curves(x_rga,[x_stacked_r, y_stacked_r, z_stacked_r], model_name="Baseline", prefix="Difference",
+                  title="SE Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[3])
 
 # All curves for difference VE and Random
-plot_model_curves(x_rga,[x_voting_r, y_voting_r, z_voting_r], model_name="Random", prefix="Difference",
-                  title="VE and Random Curves Difference (New York Article)")
+plot_model_curves(x_rga,[x_voting_r, y_voting_r, z_voting_r], model_name="Baseline", prefix="Difference",
+                  title="VE Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[4])
 
 # All curves for difference NN and Random
-plot_model_curves(x_rga,[x_neural_r, y_neural_r, z_neural_r], model_name="Random", prefix="Difference",
-                  title="NN and Random Curves Difference (New York Article)")
+plot_model_curves(x_rga,[x_neural_r, y_neural_r, z_neural_r], model_name="Baseline", prefix="Difference",
+                  title="NN Performance Difference Relative to Random Baseline \n(New York Article)", ax=axs[5])
 
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Values and Volume
@@ -169,119 +181,7 @@ rga_ve, rge_ve, rgr_ve = np.meshgrid(rgas_ve, rges_ve, rgrs_ve, indexing='ij')
 rga_nn, rge_nn, rgr_nn = np.meshgrid(rgas_nn, rges_nn, rgrs_nn, indexing='ij')
 rga_r, rge_r, rgr_r = np.meshgrid(rgas_random, rges_random, rgrs_random, indexing='ij')
 
-# TOPSIS approach
-best_x_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-worst_x_list = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-best_y_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-worst_y_list = [1.0, 0.9736842105263158, 0.9473684210526316, 0.9210526315789473, 0.8947368421052632, 0.868421052631579, 0.8421052631578947, 0.8157894736842105, 0.7894736842105263, 0.7631578947368421, 0.736842105263158, 0.7105263157894737, 0.6842105263157895, 0.6578947368421053, 0.631578947368421, 0.6052631578947368, 0.5789473684210527, 0.5526315789473685, 0.5263157894736843, 0.5 ]
-
-best_z_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-worst_z_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-x_plus = np.mean(best_x_list)
-x_minus = np.mean(worst_x_list)
-
-y_plus = np.mean(best_y_list)
-y_minus = np.mean(worst_y_list)
-
-z_plus = np.mean(best_z_list)
-z_minus = np.mean(worst_z_list)
-
-mean_x_lr = np.mean(rgas_lr)
-mean_y_lr = np.mean(rges_lr)
-mean_z_lr = np.mean(rgrs_lr)
-
-mean_x_rf = np.mean(rgas_rf)
-mean_y_rf = np.mean(rges_rf)
-mean_z_rf = np.mean(rgrs_rf)
-
-mean_x_xgb = np.mean(rgas_xgb)
-mean_y_xgb = np.mean(rges_xgb)
-mean_z_xgb = np.mean(rgrs_xgb)
-
-mean_x_se = np.mean(rgas_se)
-mean_y_se = np.mean(rges_se)
-mean_z_se = np.mean(rgrs_se)
-
-mean_x_ve = np.mean(rgas_ve)
-mean_y_ve = np.mean(rges_ve)
-mean_z_ve = np.mean(rgrs_ve)
-
-mean_x_nn = np.mean(rgas_nn)
-mean_y_nn = np.mean(rges_nn)
-mean_z_nn = np.mean(rgrs_nn)
-
-mean_x_r = np.mean(rgas_random)
-mean_y_r = np.mean(rges_random)
-mean_z_r = np.mean(rgrs_random)
-
-means = {
-    "Logistic":       (mean_x_lr, mean_y_lr, mean_z_lr),
-    "RandomForest":   (mean_x_rf, mean_y_rf, mean_z_rf),
-    "XGBoost":        (mean_x_xgb, mean_y_xgb, mean_z_xgb),
-    "StackedEnsemble":(mean_x_se, mean_y_se, mean_z_se),
-    "VotingEnsemble": (mean_x_ve,  mean_y_ve,  mean_z_ve),
-    "NeuralNetwork":  (mean_x_nn,  mean_y_nn,  mean_z_nn),
-    "RandomBaseline": (mean_x_r,  mean_y_r,  mean_z_r),
-}
-
-df = pd.DataFrame.from_dict(
-    means,
-    orient="index",
-    columns=["mean_x", "mean_y", "mean_z"]
-)
-
-for col in ["mean_x", "mean_y", "mean_z"]:
-    vec = df[col].values.astype(float)
-    norm = np.sqrt((vec**2).sum())
-    df["r_" + col] = vec / norm
-
-weights = np.array([0.9, 0.05, 0.05])
-df["v_mean_x"] = df["r_mean_x"] * weights[0]
-df["v_mean_y"] = df["r_mean_y"] * weights[1]
-df["v_mean_z"] = df["r_mean_z"] * weights[2]
-
-norm_x = np.sqrt((df["mean_x"].values ** 2).sum())
-norm_y = np.sqrt((df["mean_y"].values ** 2).sum())
-norm_z = np.sqrt((df["mean_z"].values ** 2).sum())
-
-r_x_plus = x_plus / norm_x
-r_x_minus = x_minus / norm_x
-
-r_y_plus = y_plus / norm_y
-r_y_minus = y_minus / norm_y
-
-r_z_plus = z_plus / norm_z
-r_z_minus = z_minus / norm_z
-
-v_x_plus  = r_x_plus  * weights[0]
-v_x_minus = r_x_minus * weights[0]
-
-v_y_plus  = r_y_plus  * weights[1]
-v_y_minus = r_y_minus * weights[1]
-
-v_z_plus  = r_z_plus  * weights[2]
-v_z_minus = r_z_minus * weights[2]
-
-df["S_plus"] = np.sqrt(
-    (df["v_mean_x"] - v_x_plus)**2 +
-    (df["v_mean_y"] - v_y_plus)**2 +
-    (df["v_mean_z"] - v_z_plus)**2
-)
-
-df["S_minus"] = np.sqrt(
-    (df["v_mean_x"] - v_x_minus)**2 +
-    (df["v_mean_y"] - v_y_minus)**2 +
-    (df["v_mean_z"] - v_z_minus)**2
-)
-
-df["C"] = df["S_minus"] / (df["S_plus"] + df["S_minus"])
-df["Rank"] = df["C"].rank(ascending=False)
-df_sorted = df.sort_values("C", ascending=False)
-print(df_sorted[["C", "Rank"]])
-
-# Means approach
+# Means
 models = [
     ((rga_lr,  rge_lr,  rgr_lr),  "Logistic Regression", "Logistic Regression"),
     ((rga_rf,  rge_rf,  rgr_rf),  "Random Forest", "Random Forest Model"),
@@ -289,37 +189,54 @@ models = [
     ((rga_se,  rge_se,  rgr_se),  "Stacked Ensemble", "Stacked Ensemble Model"),
     ((rga_ve,  rge_ve,  rgr_ve),  "Voting Ensemble", "Voting Ensemble Model"),
     ((rga_nn,  rge_nn,  rgr_nn),  "Neural Network", "Neural Network Model"),
-    ((rga_r,   rge_r,   rgr_r),   "Random Classifier", "Random Classifier"),
+    #((rga_r,   rge_r,   rgr_r),   "Random Classifier", "Random Classifier"),
 ]
 
 # All arithmetic mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="arithmetic"
+        mean_type="arithmetic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All geometric mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="geometric"
+        mean_type="geometric",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All quadratic mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="quadratic"
+        mean_type="quadratic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Differences Means
@@ -365,33 +282,51 @@ models_diff = [
 ]
 
 # All arithmetic mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="arithmetic"
+        mean_type="arithmetic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All geometric mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="geometric"
+        mean_type="geometric",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All quadratic mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="quadratic"
+        mean_type="quadratic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Slope Arithmetic
@@ -523,3 +458,115 @@ print(f"Hypervolume NN: {volume_nn:.3f}")
 # Hypervolume R
 volume_r = hypervolume(rgas_random, rges_random, rgrs_random)
 print(f"Hypervolume Random: {volume_r:.3f}")
+
+# TOPSIS approach
+best_x_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+worst_x_list = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+best_y_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+worst_y_list = [1.0, 0.9736842105263158, 0.9473684210526316, 0.9210526315789473, 0.8947368421052632, 0.868421052631579, 0.8421052631578947, 0.8157894736842105, 0.7894736842105263, 0.7631578947368421, 0.736842105263158, 0.7105263157894737, 0.6842105263157895, 0.6578947368421053, 0.631578947368421, 0.6052631578947368, 0.5789473684210527, 0.5526315789473685, 0.5263157894736843, 0.5 ]
+
+best_z_list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+worst_z_list = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+x_plus = np.mean(best_x_list)
+x_minus = np.mean(worst_x_list)
+
+y_plus = np.mean(best_y_list)
+y_minus = np.mean(worst_y_list)
+
+z_plus = np.mean(best_z_list)
+z_minus = np.mean(worst_z_list)
+
+mean_x_lr = np.mean(rgas_lr)
+mean_y_lr = np.mean(rges_lr)
+mean_z_lr = np.mean(rgrs_lr)
+
+mean_x_rf = np.mean(rgas_rf)
+mean_y_rf = np.mean(rges_rf)
+mean_z_rf = np.mean(rgrs_rf)
+
+mean_x_xgb = np.mean(rgas_xgb)
+mean_y_xgb = np.mean(rges_xgb)
+mean_z_xgb = np.mean(rgrs_xgb)
+
+mean_x_se = np.mean(rgas_se)
+mean_y_se = np.mean(rges_se)
+mean_z_se = np.mean(rgrs_se)
+
+mean_x_ve = np.mean(rgas_ve)
+mean_y_ve = np.mean(rges_ve)
+mean_z_ve = np.mean(rgrs_ve)
+
+mean_x_nn = np.mean(rgas_nn)
+mean_y_nn = np.mean(rges_nn)
+mean_z_nn = np.mean(rgrs_nn)
+
+mean_x_r = np.mean(rgas_random)
+mean_y_r = np.mean(rges_random)
+mean_z_r = np.mean(rgrs_random)
+
+means = {
+    "Logistic":       (mean_x_lr, mean_y_lr, mean_z_lr),
+    "RandomForest":   (mean_x_rf, mean_y_rf, mean_z_rf),
+    "XGBoost":        (mean_x_xgb, mean_y_xgb, mean_z_xgb),
+    "StackedEnsemble":(mean_x_se, mean_y_se, mean_z_se),
+    "VotingEnsemble": (mean_x_ve,  mean_y_ve,  mean_z_ve),
+    "NeuralNetwork":  (mean_x_nn,  mean_y_nn,  mean_z_nn),
+    "RandomBaseline": (mean_x_r,  mean_y_r,  mean_z_r),
+}
+
+df = pd.DataFrame.from_dict(
+    means,
+    orient="index",
+    columns=["mean_x", "mean_y", "mean_z"]
+)
+
+for col in ["mean_x", "mean_y", "mean_z"]:
+    vec = df[col].values.astype(float)
+    norm = np.sqrt((vec**2).sum())
+    df["r_" + col] = vec / norm
+
+weights = np.array([1/3, 1/3, 1/3])
+df["v_mean_x"] = df["r_mean_x"] * weights[0]
+df["v_mean_y"] = df["r_mean_y"] * weights[1]
+df["v_mean_z"] = df["r_mean_z"] * weights[2]
+
+norm_x = np.sqrt((df["mean_x"].values ** 2).sum())
+norm_y = np.sqrt((df["mean_y"].values ** 2).sum())
+norm_z = np.sqrt((df["mean_z"].values ** 2).sum())
+
+r_x_plus = x_plus / norm_x
+r_x_minus = x_minus / norm_x
+
+r_y_plus = y_plus / norm_y
+r_y_minus = y_minus / norm_y
+
+r_z_plus = z_plus / norm_z
+r_z_minus = z_minus / norm_z
+
+v_x_plus  = r_x_plus  * weights[0]
+v_x_minus = r_x_minus * weights[0]
+
+v_y_plus  = r_y_plus  * weights[1]
+v_y_minus = r_y_minus * weights[1]
+
+v_z_plus  = r_z_plus  * weights[2]
+v_z_minus = r_z_minus * weights[2]
+
+df["S_plus"] = np.sqrt(
+    (df["v_mean_x"] - v_x_plus)**2 +
+    (df["v_mean_y"] - v_y_plus)**2 +
+    (df["v_mean_z"] - v_z_plus)**2
+)
+
+df["S_minus"] = np.sqrt(
+    (df["v_mean_x"] - v_x_minus)**2 +
+    (df["v_mean_y"] - v_y_minus)**2 +
+    (df["v_mean_z"] - v_z_minus)**2
+)
+
+df["C"] = df["S_minus"] / (df["S_plus"] + df["S_minus"])
+df["Rank"] = df["C"].rank(ascending=False)
+df_sorted = df.sort_values("C", ascending=False)
+print(df_sorted[["C", "Rank"]])

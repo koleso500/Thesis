@@ -13,7 +13,11 @@ values_to_remove = {
     'loan_type': [3, 4],
     'applicant_race_1': [1, 4, 6, 7],
     'lien_status': [3, 4],
-    'applicant_sex': [3, 4]
+    'applicant_sex': [3, 4],
+    'co_applicant_sex': [3, 4],
+    'co_applicant_race_1': [1, 4, 6, 7],
+    'applicant_ethnicity': [3, 4],
+    'co_applicant_ethnicity': [3, 4]
 }
 
 # Filter
@@ -52,6 +56,10 @@ data_lending_ca_clean = data_lending_ca_dropped.dropna(axis='index')
 data_lending_ca_clean.loc[:, 'action_taken'] = data_lending_ca_clean['action_taken'].map({1: 0, 3: 1})
 print(data_lending_ca_clean.shape)
 print(data_lending_ca_clean['action_taken'].value_counts())
+for column in data_lending_ca_clean.columns:
+    print(f"Value counts for column '{column}':")
+    print(data_lending_ca_clean[column].value_counts())
+    print("\n" + "-"*40 + "\n")
 data_lending_ca_clean.to_csv(os.path.join("../saved_data", "data_lending_clean_ca.csv"), index=False)
 
 # Check correlations

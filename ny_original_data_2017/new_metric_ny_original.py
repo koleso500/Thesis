@@ -84,51 +84,63 @@ y_neural_r = (np.array(y_neural) - np.array(y_random)).tolist()
 z_neural_r = (np.array(z_neural) - np.array(z_random)).tolist()
 
 # All curves for LR
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
 x_rga = np.linspace(0, 1, len(y_random))
-plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York Original)")
+plot_model_curves(x_rga,[x_lr, y_lr, z_lr], model_name="LR", title="Logistic Regression Curves (New York HMDA)", ax=axs[0])
 
 # All curves for RF
-plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York Original)")
+plot_model_curves(x_rga,[x_rf, y_rf, z_rf], model_name="RF", title="Random Forest Curves (New York HMDA)", ax=axs[1])
 
 # All curves for XGB
-plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York Original)")
+plot_model_curves(x_rga,[x_xgb, y_xgb, z_xgb], model_name="XGB", title="XGBoosting Curves (New York HMDA)", ax=axs[2])
 
 # All curves for SE
-plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York Original)")
+plot_model_curves(x_rga,[x_stacked, y_stacked, z_stacked], model_name="SE", title="Stacked Ensemble Curves (New York HMDA)", ax=axs[3])
 
 # All curves for VE
-plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York Original)")
+plot_model_curves(x_rga,[x_voting, y_voting, z_voting], model_name="VE", title="Voting Ensemble Curves (New York HMDA)", ax=axs[4])
 
 # All curves for NN
-plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York Original)")
+plot_model_curves(x_rga,[x_neural, y_neural, z_neural], model_name="NN", title="Neural Network Curves (New York HMDA)", ax=axs[5])
 
 # All curves for Random
-plot_model_curves(x_rga,[x_random, y_random, z_random], model_name="Random",title="Random Classifier Curves (New York Original)")
+plot_model_curves(x_rga,[x_random, y_random, z_random], model_name="Random",title="Random Classifier Curves (New York HMDA)")
+
+fig.subplots_adjust(top=0.90, hspace=0.4)
+plt.tight_layout()
+plt.show()
 
 # All curves for difference LR and Random
-plot_model_curves(x_rga,[x_lr_r, y_lr_r, z_lr_r], model_name="Random", prefix="Difference",
-                  title="LR and Random Curves Difference (New York Original)")
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+plot_model_curves(x_rga,[x_lr_r, y_lr_r, z_lr_r], model_name="Baseline", prefix="Difference",
+                  title="LR Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[0])
 
 # All curves for difference RF and Random
-plot_model_curves(x_rga,[x_rf_r, y_rf_r, z_rf_r], model_name="Random", prefix="Difference",
-                  title="RF and Random Curves Difference (New York Original)")
+plot_model_curves(x_rga,[x_rf_r, y_rf_r, z_rf_r], model_name="Baseline", prefix="Difference",
+                  title="RF Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[1])
 
 # All curves for difference XGB and Random
-plot_model_curves(x_rga,[x_xgb_r, y_xgb_r, z_xgb_r], model_name="Random", prefix="Difference",
-                  title="XGB and Random Curves Difference (New York Original)")
+plot_model_curves(x_rga,[x_xgb_r, y_xgb_r, z_xgb_r], model_name="Baseline", prefix="Difference",
+                  title="XGB Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[2])
 
 # All curves for difference SE and Random
-plot_model_curves(x_rga,[x_stacked_r, y_stacked_r, z_stacked_r], model_name="Random", prefix="Difference",
-                  title="SE and Random Curves Difference (New York Original)")
+plot_model_curves(x_rga,[x_stacked_r, y_stacked_r, z_stacked_r], model_name="Baseline", prefix="Difference",
+                  title="SE Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[3])
 
 # All curves for difference VE and Random
-plot_model_curves(x_rga,[x_voting_r, y_voting_r, z_voting_r], model_name="Random", prefix="Difference",
-                  title="VE and Random Curves Difference (New York Original)")
+plot_model_curves(x_rga,[x_voting_r, y_voting_r, z_voting_r], model_name="Baseline", prefix="Difference",
+                  title="VE Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[4])
 
 # All curves for difference NN and Random
-plot_model_curves(x_rga,[x_neural_r, y_neural_r, z_neural_r], model_name="Random", prefix="Difference",
-                  title="NN and Random Curves Difference (New York Original)")
+plot_model_curves(x_rga,[x_neural_r, y_neural_r, z_neural_r], model_name="Baseline", prefix="Difference",
+                  title="NN Performance Difference Relative to Random Baseline \n(New York HMDA)", ax=axs[5])
 
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Values and Volume
@@ -177,37 +189,54 @@ models = [
     ((rga_se,  rge_se,  rgr_se),  "Stacked Ensemble", "Stacked Ensemble Model"),
     ((rga_ve,  rge_ve,  rgr_ve),  "Voting Ensemble", "Voting Ensemble Model"),
     ((rga_nn,  rge_nn,  rgr_nn),  "Neural Network", "Neural Network Model"),
-    ((rga_r,   rge_r,   rgr_r),   "Random Classifier", "Random Classifier"),
+    #((rga_r,   rge_r,   rgr_r),   "Random Classifier", "Random Classifier"),
 ]
 
 # All arithmetic mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="arithmetic"
+        mean_type="arithmetic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All geometric mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="geometric"
+        mean_type="geometric",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All quadratic mean histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="quadratic"
+        mean_type="quadratic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Differences Means
@@ -253,33 +282,51 @@ models_diff = [
 ]
 
 # All arithmetic mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="arithmetic"
+        mean_type="arithmetic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All geometric mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="geometric"
+        mean_type="geometric",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # All quadratic mean differences histograms
-for (rga_var, rge_var, rgr_var), model_name, bar_label in models_diff:
+fig, axs = plt.subplots(3, 2, figsize=(15, 20))
+axs = axs.flatten()
+
+for i, ((rga_var, rge_var, rgr_var), model_name, bar_label) in enumerate(models):
     plot_diff_mean_histogram(
         rga_var, rge_var, rgr_var,
         model_name=model_name,
         bar_label=bar_label,
-        mean_type="quadratic"
+        mean_type="quadratic",
+        ax=axs[i]
     )
+plt.tight_layout()
+fig.subplots_adjust(top=0.90, hspace=0.4)
 plt.show()
 
 # Slope Arithmetic

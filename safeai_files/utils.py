@@ -174,7 +174,7 @@ def find_yhat(model: Union[CatBoostClassifier, CatBoostRegressor, XGBClassifier,
     return yhat
 
 
-def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='Steps', ylabel='Values'):
+def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='Steps', ylabel='Values', ax=None):
     """
     Plot RGA/RGE/RGR curves for a given model using a template.
 
@@ -190,18 +190,33 @@ def plot_model_curves(x, curves, model_name, prefix="Curve", title="", xlabel='S
     labels_base = ["RGA", "RGE", "RGR"]
     labels = [f"{label} {prefix} {model_name}" for label in labels_base]
 
-    plt.figure(figsize=(6, 4))
-    for curve, label in zip(curves, labels):
-        plt.plot(x, curve, linestyle='-', label=label)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.legend()
-    plt.xlim([0, 1])
-    plt.grid(True)
+    if model_name == "Random":
+        line_styles = ['-', '--', ':']  # Make each line style different
+    else:
+        line_styles = ['-'] * len(curves)
+
+    if ax is None:
+        plt.figure(figsize=(6, 4))
+        for curve, label, style in zip(curves, labels, line_styles):
+            plt.plot(x, curve, linestyle=style, label=label)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.legend()
+        plt.xlim([0, 1])
+        plt.grid(True)
+    else:
+        for curve, label, style in zip(curves, labels, line_styles):
+            ax.plot(x, curve, linestyle=style, label=label)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        ax.grid(True)
+        ax.legend()
 
 
-def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_label="Model", bins=60):
+def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_label="Model", bins=60, ax=None):
     """
     Plot a histogram for the given metric values with normalized counts.
 
@@ -229,15 +244,23 @@ def plot_metric_distribution(metric_values, print_label, xlabel, title, bar_labe
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     # Plot
-    plt.figure(figsize=(10, 6))
-    plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
-    plt.xlabel(xlabel)
-    plt.ylabel('Normalized Counts')
-    plt.title(title)
-    plt.grid(True)
-    plt.legend()
+    if ax is None:
+        plt.figure(figsize=(10, 6))
+        plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
+        plt.xlabel(xlabel)
+        plt.ylabel('Normalized Counts')
+        plt.title(title)
+        plt.grid(True)
+        plt.legend()
+    else:
+        ax.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('Normalized Counts')
+        ax.set_title(title)
+        ax.grid(True)
+        ax.legend()
 
-def plot_metric_distribution_diff(metric_values, print_label, xlabel, title, bar_label="Model", bins=60):
+def plot_metric_distribution_diff(metric_values, print_label, xlabel, title, bar_label="Model", bins=60, ax=None):
     """
     Plot a histogram for the given metric differences values with normalized counts.
 
@@ -265,19 +288,29 @@ def plot_metric_distribution_diff(metric_values, print_label, xlabel, title, bar
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     # Plot
-    plt.figure(figsize=(10, 6))
-    plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label, color='green')
-    plt.axvline(0, color='red', linestyle='--', label='No Difference')
-    plt.xlabel(xlabel)
-    plt.ylabel('Normalized Counts')
-    plt.title(title)
-    plt.grid(True)
-    plt.legend()
+    if ax is None:
+        plt.figure(figsize=(10, 6))
+        plt.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label, color='green')
+        plt.axvline(0, color='red', linestyle='--', label='No Difference')
+        plt.xlabel(xlabel)
+        plt.ylabel('Normalized Counts')
+        plt.title(title)
+        plt.grid(True)
+        plt.legend()
+    else:
+        ax.bar(bin_centers, counts_norm, width=(bin_edges[1] - bin_edges[0]), alpha=0.7, label=bar_label)
+        ax.axvline(0, color='red', linestyle='--', label='No Difference')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('Normalized Counts')
+        ax.set_title(title)
+        ax.grid(True)
+        ax.legend()
 
 def plot_mean_histogram(rga, rge, rgr, *,
                         model_name: str,
                         bar_label: str,
-                        mean_type: str):
+                        mean_type: str,
+                        ax = None):
     """
     Compute different means (arithmetic, geometric, quadratic) of (rga, rge, rgr),
     then call plot_metric_distribution_diff with the appropriate labels.
@@ -316,13 +349,15 @@ def plot_mean_histogram(rga, rge, rgr, *,
         print_label=print_label,
         xlabel=xlabel,
         title=title,
-        bar_label=bar_label
+        bar_label=bar_label,
+        ax=ax
     )
 
 def plot_diff_mean_histogram(rga, rge, rgr, *,
                         model_name: str,
                         bar_label: str,
-                        mean_type: str):
+                        mean_type: str,
+                        ax = None):
     """
     Compute different means of differences values with base model (arithmetic, geometric, quadratic) of (rga, rge, rgr),
     then call plot_metric_distribution_diff with the appropriate labels.
@@ -361,7 +396,8 @@ def plot_diff_mean_histogram(rga, rge, rgr, *,
         print_label=print_label,
         xlabel=xlabel,
         title=title,
-        bar_label=bar_label
+        bar_label=bar_label,
+        ax=ax
     )
 
 def save_model_metrics(result, save_dir="results_metrics"):
